@@ -1,0 +1,2 @@
+# statera
+Simple accounting
