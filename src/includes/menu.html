@@ -1,0 +1,33 @@
+<script>
+    var menu = {
+        undolist: function (n) {
+            let c = parseInt(n.getAttribute("_idx")) + 1;
+            window.location = "UndoLast.php?n=" + c;
+        }
+    }
+</script>
+<div id="menu">
+    <div onclick="window.location = '/'">HOME</div>
+    <div onclick="window.location = 'Signout.php'">SIGN OUT</div>
+    <?php
+        if ($user && isset($undolist) && $undolist)
+        {
+            if ($undolist->count() > 0)
+            {
+                echo "<div><div class='m1'>UNDO</div>";
+                echo "<div class='m2'>";
+                $a = $undolist->titles();
+                $c = 0;
+                foreach($a as $t)
+                {
+                    echo "<div class='m3' _idx='{$c}' onclick='menu.undolist(this)'>{$t}</div>";
+                    $c++;
+                }
+                echo "</div>";
+                echo "</div>";
+            }   
+            else
+                echo "<div class='dim'>UNDO</div>";
+        }
+    ?>
+</div>

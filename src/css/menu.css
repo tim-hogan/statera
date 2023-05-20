@@ -1,0 +1,10 @@
+﻿#menu {display: flex;background-color: #082b93;padding: 8px;}
+#menu div{margin-right: 12px;margin-left: 12px;font-size: 14pt;color: #dadada;cursor: pointer;}
+#menu div:hover{color: #fcf1bb;}
+#menu div:hover > div{display: block;}
+#menu div.dim{color: #878787;cursor: auto;}
+#menu div.dim:hover {color: #878787;cursor: default;}
+#menu div.m1 {margin-right: 12px;margin-left: 12px;font-size: 14pt;color: #dadada;cursor: pointer;}
+#menu div.m2 {display: none;position: absolute;z-index: 10;background-color: #a0b1ff;border: solid 1px #888;}
+#menu div.m3 {color: black;}
+#menu div.m3:hover{color: #4b2863;}

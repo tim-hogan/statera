@@ -1,0 +1,6 @@
+﻿#footer {padding-left: 20px;padding-right: 20px;height: 50px;background-color: #f0f0f0;}
+#footer table {width: 100%;border-collapse: collapse;border: none;margin: 0;height: 50px;}
+#footer td {font-size: 9pt;color: #888;text-shadow: 1px 1px white;vertical-align: middle;}
+#footer .l {text-align: left;}
+#footer .c {text-align: center;}
+#footer .r {text-align: right;}

@@ -1,0 +1,24 @@
+﻿body {font-family: Arial, Helvetica, sans-serif; font-size: 10pt; margin: 0;}
+#container {width: 350px; margin: auto;}
+#heading {}
+#heading p {font-size: 24pt;text-align: center;color: #0000b3;font-weight: bold;}
+#main {}
+#form {margin: 0; margin-top: 20px;padding: 10px;background-color: #f0f0f0;}
+p.hd1 {margin-bottom: 0;font-size: 12pt;color: #666;}
+p.hd2 {margin-bottom: 0;}
+p.sp {text-align: right;margin-right: 22px;}
+td {font-size: 14pt; color: #666}
+td.sp {cursor: pointer; color: blue; font-size: 9pt;}
+input.username {font-size: 12pt;max-width: 300px;}
+input.password {font-size: 12pt;max-width: 300px;}
+input.cb {height: 20px; width:20px;}
+button {margin-top: 20px; font-size: 12pt;}
+.errMsg {color: red;}
+@media only screen and (min-width: 800px) {
+    #container {margin: auto;width: 380px;}
+    #form {padding: 20px;}
+    input.username {font-size: 14pt;color: #555;max-width: 300px;}
+    input.password {font-size: 14pt;color: #555;max-width: 300px;}
+    input.cb {height: 14px; width: 14px;}
+    button {font-size: 14pt;color: #555;}
+}
