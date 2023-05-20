@@ -93,6 +93,14 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+if  [[ -z $INSTALLNAME ]] ; then
+  echo -e "${RED}ERROR: You must specify an install name with -i${NC}" >&2
+  exit 1
+fi
+
+#test
+exit 1
+
 WEBDIR="/var/www/html/${INSTALLNAME}"
 DBNAME="${INSTALLNAME}"
 HOSTNAME="${INSTALLNAME}.devt.nz"
