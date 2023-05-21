@@ -202,6 +202,7 @@ cp ../src/js/st.js                              ./webfiles/js
 emptyandcreate webfiles/config
 cp ../src/config/StateraForm.php                ./webfiles/config
 
+tar -zcf ../install/statera.tar.gz .
 
 cd ..
 
