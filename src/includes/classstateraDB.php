@@ -694,6 +694,15 @@ class stateraDB extends SQLPlus
         return null;
     }
 
+    public function everyChartExpenseAndAsset()
+    {
+        $r = $this->p_query("select * from chart left join taxclass on idtaxclass = chart_taxclass where chart_type = 'expense' or chart_type = 'asset' order by chart_description",null,null);
+        if (!$r) {$this->sqlError($q); return null;}
+        if ($r->num_rows > 0)
+            return $r->fetch_all(MYSQLI_ASSOC);
+        return null;
+    }
+
     //*********************************************************************
     // account functions
     //*********************************************************************

@@ -75,7 +75,7 @@ $chart_expenses = [
     ["Desc" => "Subscriptions and courses", "tax" => 1, "m" => 0],
     ["Desc" => "Telephone/Intertnet", "tax" => 1, "m" => 0,],
     ["Desc" => "Technical & Reserach Material", "tax" => 1, "m" => 0,],
-    ["Desc" => "Tools", "tax" => 1, "m" => 0,],
+    ["Desc" => "Tools Under($1000)", "tax" => 1, "m" => 0,],
     ["Desc" => "Travel", "tax" => 1, "m" => 0,],
     ["Desc" => "Uniforms", "tax" => 1, "m" => 0,],
     ["Desc" => "Water rates", "tax" => 1, "m" => 0,]
@@ -95,6 +95,26 @@ function createDefaultValues()
             $formfields["company_sales_tax_name"] = "GST";
     }
     $formfields["company_start_date"] = $dtNow->format("Y-m-d");
+}
+
+function createChartEntry($code,$type,$subtype,$typename,$description,$taxclass,$desc_dr,$desc_cr,$balance_sheet_desc,$balance_sheet_desc_subtype)
+{
+
+    global $DB;
+
+    $chart = array();
+    $chart["chart_code"] = $code;
+    $chart["chart_type"] = $type;
+    $chart["chart_type_name"] = $typename;
+    $chart["chart_subtype"] = $subtype;
+    $chart["chart_description"] = $description;
+    $chart["chart_taxclass"] = $taxclass;
+    $chart["chart_description_dr"] = $desc_dr;
+    $chart["chart_description_cr"] = $desc_cr;
+    $chart["chart_balancesheet"] = $balance_sheet_desc;
+    $chart["chart_balancesheet_subtype"] =$balance_sheet_desc_subtype;
+
+    $DB->p_create_from_array("chart",$chart);
 }
 
 function buildExpenseLine($e,$idx)
@@ -157,7 +177,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET")
 
 if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
+
+
     var_error_log($_POST,"post");
+
+    $gstclassid = null;
+
 
     $formfields["company_name"] = FormList::getField("company_name");
     $formfields["company_address1"] = FormList::getField("company_address1");
@@ -210,52 +235,103 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
     switch ($formfields["company_country_prefix"])
     {
         case "NZ":
+            //GST
             $taxclass= ["taxclass_name" => "GST",
                         "taxclass_description" => "New Zealand GST",
                         "taxclass_invoice_text" => "GST NUMBER"
             ];
             $DB->p_create_from_array("taxclass",$taxclass);
-            $taxclass= ["taxclass_name" => "COMPANY",
-                        "taxclass_description" => "New Zealand Compnay Tax",
-                        "taxclass_invoice_text" => ""
-            ];
-            $DB->p_create_from_array("taxclass",$taxclass);
 
-            $taxrate= ["taxrate_taxclass" => 1,
+            $gstclassid = $DB->insert_id;
+
+            $taxrate= ["taxrate_taxclass" => $gstclassid,
                        "taxrate_from_date" => "2010-10-01",
                        "taxrate_rate" => 0.15,
                        "taxrate_comments" => "New Zealand GST From 1 Oct 2010"
             ];
             $DB->p_create_from_array("taxrate",$taxrate);
 
-            $taxrate= ["taxrate_taxclass" => 2,
+            //Company tax
+            $taxclass= ["taxclass_name" => "COMPANY",
+                        "taxclass_description" => "New Zealand Compnay Tax",
+                        "taxclass_invoice_text" => ""
+            ];
+            $DB->p_create_from_array("taxclass",$taxclass);
+
+
+            $taxrate= ["taxrate_taxclass" => $DB->insert_id,
                        "taxrate_from_date" => "2012-04-01",
                        "taxrate_rate" => 0.28,
                        "taxrate_comments" => "New Zealand Corporate Tax Rate 2012"
             ];
+
             $DB->p_create_from_array("taxrate",$taxrate);
             break;
     }
 
+    //default charts
+    createChartEntry(100,"cash",null,"Cash","Current Account",$gstclassid,null,null,null,null);
+    createChartEntry(200,"income","sale","Sale","",$gstclassid,null,null,null,null);
+    createChartEntry(300,"current asset","accounts receivable","Accounts Receivable","",$gstclassid,null,null,null,null);
+    createChartEntry(400,"current liability","accounts payable","Accounts Payable","",$gstclassid,null,null,null,null);
+    createChartEntry(500,"equity","Shares","Shares paid up","",null,null,null,null,null);
+    createChartEntry(600,"asset","fixed asset","Fixed asset","",null,null,null,null,null);
+    createChartEntry(700,"liability","shareholders","Shareholder current account","",null,null,null,null,null);
+    createChartEntry(800,"tax","gst","GST","",null,null,null,null,null);
+    createChartEntry(801,"tax","company","COMPANY TAX","",null,null,null,null,null);
+
+    //Excpenses
+    $n = count($chart_expenses);
+    error_log("Count of expenses checked {$n}");
+
+    $idcode = 900;
+    for ($idx=0; $idx < $n;$idx++)
+    {
+        if ($chart_expenses[$idx] ["m"]  || (isset($_POST["expense_checked"] [$idx]) && $_POST["expense_checked"] [$idx] == "on"))
+        {
+            $chart = array();
+            $chart["chart_code"] = $idcode;
+            $chart["chart_type"] = "expense";
+            $chart["chart_description_dr"] = $chart_expenses[$idx] ["Desc"];
+            $chart["chart_type_name"] = "Expense";
+            $chart["chart_subtype"] = "";
+            $chart["chart_description"] = $chart_expenses[$idx] ["Desc"];
+            if ($chart_expenses[$idx] ["tax"])
+                $chart["chart_taxclass"] = $gstclassid;
+            $chart["chart_description_cr"] = "";
+            $chart["chart_balancesheet"] = "expense";
+            $chart["chart_balancesheet_subtype"] = "";
+
+            $DB->p_create_from_array("chart",$chart);
+
+            $idcode += 2;
+        }
+    }
+
     //Products
     $n = count($_POST["product_checked"]);
+    error_log("Count of products checked {$n}");
     for ($idx = 0; $idx < $n;$idx++)
     {
         if ($_POST["product_checked"] [$idx] == "on")
         {
 
             $product = array();
-            $product["product_description"] = FormList::getIndexdField("product_description",$idx);
+            $product["product_description"] = FormList::getIndexField("product_description",$idx);
             $product["product_unit_cost"] = FormList::getIndexedCurrencyField("product_rate",$idx);
-            $product["product_unit_text"] = FormList::getIndexdField("product_unit",$idx);
-            $product["product_type"] = strtolower(FormList::getIndexdField("product_type",$idx));
+            $product["product_unit_text"] = FormList::getIndexField("product_unit",$idx);
+            $product["product_type"] = strtolower(FormList::getIndexField("product_type",$idx));
+
+            var_error_log($product,"product");
 
             if (strlen($product["product_description"]) > 0 && $product["product_unit_cost"] == 0)
+            {
                 $DB->p_create_from_array("product",$product);
+            }
         }
     }
 
-$DB->TransactionError();
+    //$DB->TransactionError();
 
     if ( $DB->EndTransaction() )
     {

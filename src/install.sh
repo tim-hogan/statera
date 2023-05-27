@@ -35,6 +35,7 @@ APACHEDIR="/etc/apache2"
 #*****************************************************************************************
 INSTALLNAME=""
 HOSTNAME=""
+INSTALLFILES=true
 INSTALLDB=true
 INSTALLWEB=true
 UNINSTALL=false
@@ -55,11 +56,17 @@ function usage()
     echo "    -i <installation name> Required to specify the database and installation name"
     echo "    -f Install files only"
     echo "    -g Install files and database (Skip website)"
+    echo "    -d Database only"
 
 }
 
-while getopts ":fghi:u" o; do
+while getopts ":dfghi:u" o; do
     case "${o}" in
+        d)
+            INSTALLFILES=false    
+            INSTALLDB=true
+            INSTALLWEB=false
+            ;;
         f)
             INSTALLDB=false
             INSTALLWEB=false
@@ -98,12 +105,27 @@ if  [[ -z $INSTALLNAME ]] ; then
   exit 1
 fi
 
-#test
-exit 1
 
 WEBDIR="/var/www/html/${INSTALLNAME}"
 DBNAME="${INSTALLNAME}"
 HOSTNAME="${INSTALLNAME}.devt.nz"
+
+echo -e "${GREEN}-------------------------------------------------------------------------------${NC}"
+echo -e "${GREEN}-Installation checks-----------------------------------------------------------${NC}"
+echo -e "${GREEN}-------------------------------------------------------------------------------${NC}"
+echo -e "${GREEN} Web Directory ${WEBDIR}${NC}"
+echo -e "${GREEN} Database Name ${DBNAME}${NC}"
+echo -e "${GREEN} Host Name ${HOSTNAME}${NC}"
+echo -e "${GREEN}-------------------------------------------------------------------------------${NC}"
+echo -en "${YELLOW} Is this correct Y/n ${NC}"
+
+read DUMMY
+if [ "$DUMMY" != "Y" ] ; then
+    exit 1
+fi
+
+echo -e "${GREEN}Start of install${NC}"
+
 
 #*****************************************************************************************
 # Uninstall
@@ -113,6 +135,8 @@ if $UNINSTALL ; then
     rm -r $WEBDIR
     mysql -e "DROP DATABASE ${DBNAME}"
     vault deleteshelf -s $INSTALLNAME
+    echo -e "Uninstall complete"
+    exit 0
 fi
 
 
@@ -132,19 +156,24 @@ fi
 mkdir -p ${DIR}/tmpfiles
 tar -C ${DIR}/tmpfiles -zxf ${DIR}/statera.tar.gz
 
-echo -e "${GREEN}Copy files${NC}"
-echo "Removing old directories"
-if [ -d "$WEBDIR" ] ; then
-    rm -r $WEBDIR
+if $INSTALLFILES ; then
+    echo -e "${GREEN}Copy files${NC}"
+    echo "Removing old directories"
+    if [ -d "$WEBDIR" ] ; then
+        rm -r $WEBDIR
+    fi
+
+
+    echo "Copying Web files"
+    mkdir -p $WEBDIR
+    cp -rT ${DIR}/tmpfiles/webfiles/ $WEBDIR
+    chown -R www-data:www-data $WEBDIR
+    echo " Web files copied"
 fi
 
-echo "Copying Web files"
-mkdir -p $WEBDIR
-cp -rT ${DIR}/tmpfiles/webfiles/ $WEBDIR
-chown -R www-data:www-data $WEBDIR
-
-if INSTALLDB ; then
-	if [ -d /var/lib/mysql/${DBNAME} ] ; then 
+if $INSTALLDB ; then
+	echo "Install database"
+    if [ -d /var/lib/mysql/${DBNAME} ] ; then 
 		echo -n -e "${RED}The database ${YELLOW}${DBNAME} ${RED}already exists on this server, do you want to override ${NC}[y/n] "
         read DUMMY
         if [ "$DUMMY" != "y" ] ; then
@@ -195,7 +224,7 @@ if INSTALLDB ; then
         mysql ${DBNAME} -e "INSERT into global (global_default_homepage,global_default_domainname) values ('/','devt.nz')";
         
 
-        PEPPER=$(/etc/vault/getKey -s nvaluatecorp -k PEPPER)
+        PEPPER=$(/etc/vault/getKey -s $INSTALLNAME -k PEPPER)
         #create the first user in the database
         echo "Createing first database admin user"
         #create the salt and hash
@@ -208,7 +237,7 @@ if INSTALLDB ; then
         echo "Username and passwords have been created"
     
         mysql ${DBNAME} -e "INSERT into user (user_randid,user_session_key,user_lastname,user_username,user_hash,user_salt,user_security,user_timezone) values ('${RAND1}','${SESSION_KEY}','Administrator','admin','${HASH}','${SALT}',2047,'Pacific/Auckland')"
-
+    fi
 fi
 
 if $INSTALLWEB ; then
@@ -237,5 +266,5 @@ Header always set Strict-Transport-Security \"max-age=63072000; includeSubdomain
     systemctl reload apache2
 fi
 
-echo "${GREEN}INSTALLATION COMPLETE${NC}"
+echo -e "${GREEN}INSTALLATION COMPLETE${NC}"
 exit 0

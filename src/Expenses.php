@@ -205,7 +205,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
                         <select id="chart" name="chart" onchange="catChange(this)">
                             <option value="0"></option>
                             <?php
-                            $charts = $DB->everyChartExpense();
+                            $charts = $DB->everyChartExpenseAndAsset();
                             foreach($charts as $chart)
                             {
                                 $selected = (isset($formfields["chart"]) && $formfields["chart"] == $chart["chart_code"]) ? "selected" : "";
