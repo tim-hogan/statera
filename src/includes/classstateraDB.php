@@ -148,6 +148,26 @@ class taxrate extends TableRow
     }
 }
 
+class asset extends TableRow
+{
+    function __construct($tabledata=null)
+    {
+        if ($tabledata)
+            parent::__construct($tabledata);
+        else
+            parent::__construct
+            (
+                [
+                    "idasset" =>["type" => "int"],
+                    "asset_name" =>["type" => "varchar"],
+                    "asset_purhcase_date" =>["type" => "date"],
+                    "asset_depreciation_method" =>["type" => "varchar"],
+                    "asset_depreciation_rate" =>["type" => "double"]
+                ]
+            );
+    }
+}
+
 class chart extends TableRow
 {
     function __construct($tabledata=null)
@@ -612,6 +632,32 @@ class stateraDB extends SQLPlus
         $d = self::encrypt(json_encode($testdata),$user->user_session_key->raw());
         $data = self::decrypt($d,$user->user_session_key->raw());
         return json_decode($data,true);
+    }
+
+    //*********************************************************************
+    // asset functions
+    //*********************************************************************
+    public function getAsset($id)
+    {
+        return $this->o_singlequery("asset","select * from asset where idasset = ?","i",$id);
+    }
+
+    public function createAsset($name,$date,$method,$rate)
+    {
+        $r = $this->p_create("insert into asset (asset_name,asset_purhcase_date,asset_depreciation_method,asset_depreciation_rate) values (?,?,?,?)","sssd",$name,$date,$method,$rate);
+        if ($r)
+            return $this->insert_id;
+        return null;
+    }
+
+    public function allAssets()
+    {
+        return $this->p_query("select * from asset",null,null);
+    }
+
+    public function allAssetJournals()
+    {
+        $r = $this->p_query("select * from asset left join journal on journal_asset = idasset left join chart on idchart = journal_chart where chart_type = 'asset' and chart_subtype = 'fixed_asset'",null,null);
     }
 
     //*********************************************************************
@@ -1086,7 +1132,7 @@ class stateraDB extends SQLPlus
 
     }
 
-    public function expensePaid($strdate,$description,$ledgerAmount,$vendname,$vendtax,$chart1=0,$chart2=0,$enterTransaction=true)
+    public function expensePaid($strdate,$description,$ledgerAmount,$vendname,$vendtax,$chart1=0,$chart2=0,$asset=null,$enterTransaction=true)
     {
 
         //Get last folio
@@ -1097,6 +1143,8 @@ class stateraDB extends SQLPlus
             $rec1['journal_description'] = "EXPENSE PAID";
         else
             $rec1['journal_description'] = $description;
+        if ($asset)
+            $rec1['journal_asset'] = $asset;
         $rec1['journal_net'] = -($ledgerAmount->net);
         $rec1['journal_tax'] = -($ledgerAmount->tax);
         $rec1['journal_gross'] = -($ledgerAmount->gross);
@@ -1125,7 +1173,7 @@ class stateraDB extends SQLPlus
         return $this->createPair($rec1,$chart1,$chart2,0,$enterTransaction);
     }
 
-    public function expenseUnPaid($strdate,$description,$ledgerAmount,$vendname,$vendtax,$chart1=0,$chart2=0,$enterTransaction=true)
+    public function expenseUnPaid($strdate,$description,$ledgerAmount,$vendname,$vendtax,$chart1=0,$chart2=0,$asset=null,$enterTransaction=true)
     {
 
         //Get last folio
@@ -1136,6 +1184,8 @@ class stateraDB extends SQLPlus
             $rec1['journal_description'] = "ACCRUED EXPENSE";
         else
             $rec1['journal_description'] = $description;
+        if ($asset)
+            $rec1['journal_asset'] = $asset;
         $rec1['journal_net'] = -($ledgerAmount->net);
         $rec1['journal_tax'] = -($ledgerAmount->tax);
         $rec1['journal_gross'] = -($ledgerAmount->gross);
@@ -1261,6 +1311,16 @@ class stateraDB extends SQLPlus
         }
         return null;
 
+    }
+
+    public function everyAssetJournals($assetid)
+    {
+        $q = "select * from journal left join asset on idasset = journal_asset left join chart on chart_code = journal_chart where jounal_asset = {$assetid} and chart_type = 'asset' and chart_subtype ='fixed_asset'";
+        $r = $this->p_query("select * from journal left join asset on idasset = journal_asset left join chart on chart_code = journal_chart where journal_asset = ? and chart_type = 'asset' and chart_subtype ='fixed_asset'","i",$assetid);
+        if (!$r) {$this->sqlError($q); return null;}
+        if ($r->num_rows > 0)
+            return $r->fetch_all(MYSQLI_ASSOC);
+        return null;
     }
 
     public function payAccountsReceivable($xtn,$amount)
@@ -1471,7 +1531,7 @@ class stateraDB extends SQLPlus
 
 
         //Total Purchases
-        $j = $this->p_singlequery("select sum(journal_gross) as GROSS from journal left join chart a on a.chart_code = journal_chart left join chart b on b.chart_code = journal_source_chart where journal_date >= ? and journal_date <= ? and a.chart_type = 'cash' and a.chart_subtype = 'bank' and b.chart_type= 'expense' and b.chart_taxclass is not null","ss",$from,$to);
+        $j = $this->p_singlequery("select sum(journal_gross) as GROSS from journal left join chart a on a.chart_code = journal_chart left join chart b on b.chart_code = journal_source_chart where journal_date >= ? and journal_date <= ? and a.chart_type = 'cash' and a.chart_subtype = 'bank' and (b.chart_type= 'expense' or b.chart_type= 'asset') and b.chart_taxclass is not null","ss",$from,$to);
         $lines[11] = -$j["GROSS"];
         $detail[] = ["line" => 11,"name"=>"TOTAL PURCHASES","value" => $lines[11] ];
 
@@ -1630,6 +1690,21 @@ class stateraDB extends SQLPlus
         }
 
         $assets["current_assets"] = $current_assets;
+
+        $fixed_assets = array();
+        $r = $this->p_query("select chart_code, chart_type, chart_description, sum(journal_net) as NET , sum(journal_gross) as GROSS from journal left join chart on chart_code = journal_chart where chart_balancesheet = 'asset' and chart_balancesheet_subtype = 'fixed_asset' and journal_date <= ? group by chart_code,chart_type,chart_description order by chart_description","s",$to);
+        while ($j = $r->fetch_assoc())
+        {
+            $fixed_assets[$j["chart_code"]] = array();
+            $fixed_assets[$j["chart_code"]] ["name"] = $j["chart_description"];
+            if ($j["chart_type"] == "cash")
+                $fixed_assets[$j["chart_code"]] ["amt"] = $j["GROSS"];
+            else
+                $fixed_assets[$j["chart_code"]] ["amt"] = $j["NET"];
+        }
+
+        $assets["fixed_assets"] = $fixed_assets;
+
         $ret["assets"] = $assets;
 
 

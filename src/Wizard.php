@@ -33,6 +33,19 @@ $default_product_service = [
     ["id" => 8,"type" => "Service","description" => "Spare", "unit" => "" , "rate" => ""],
     ];
 
+//Default charts
+$default_charts = [
+    ["code" => 100,"type" => "cash","subtype" => "bank","typename" => "Cash","description" => "Current Account","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "asset","balance_sheet_desc_sub" => "current_asset"],
+    ["code" => 200,"type" => "income","subtype" => "sale","typename" => "Income","description" => "Sales","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "revenue","balance_sheet_desc_sub" => ""],
+    ["code" => 300,"type" => "current asset","subtype" => "accounts receivable","typename" => "Current Assets","description" => "Accounts Receivable","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "asset","balance_sheet_desc_sub" => "current_asset"],
+    ["code" => 400,"type" => "current liability","subtype" => "accounts payable","typename" => "Current Liabilities","description" => "Accounts Payable","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "liability","balance_sheet_desc_sub" => ""],
+    ["code" => 500,"type" => "equity","subtype" => "shares","typename" => "Equity","description" => "Shares paid up","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "liability","balance_sheet_desc_sub" => ""],
+    ["code" => 600,"type" => "asset","subtype" => "fixed_asset","typename" => "Asset","description" => "Fixed assets","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "asset","balance_sheet_desc_sub" => "fixed_asset"],
+    ["code" => 700,"type" => "liability","subtype" => "shareholders","typename" => "Liability","description" => "Shareholder current account","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "liability","balance_sheet_desc_sub" => ""],
+    ["code" => 800,"type" => "tax","subtype" => "gst","typename" => "Tax","description" => "GST","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "tax","balance_sheet_desc_sub" => ""],
+    ["code" => 801,"type" => "tax","subtype" => "company","typename" => "Tax","description" => "Company Tax","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "tax","balance_sheet_desc_sub" => ""],
+];
+
 //Chart expeneses m = mandatory
 $chart_expenses = [
     ["Desc" => "ACC Levies", "tax" => 1, "m" => 0],
@@ -127,20 +140,20 @@ function buildExpenseLine($e,$idx)
 
 }
 
-function buildProductService($ps)
+function buildProductService($ps,$idx)
 {
     echo "<tr>";
-    echo "<td><input _id='{$ps["id"]}' type='checkbox' name='product_checked[]' checked /></td>";
+    echo "<td><input _id='{$ps["id"]}' type='checkbox' name='product_checked[{$idx}]' checked /></td>";
     $service_selected = "";
     $goods_selected = "";
     if ($ps["type"] == "Service")
         $service_selected = "selected";
     if ($ps["type"] == "Goods")
         $goods_selected = "selected";
-    echo "<td><select name='product_type[]'><option value='goods' {$goods_selected} >Goods</option><option value='service' {$service_selected} >Service</option></select></td>";
-    echo "<td><input _id='{$ps["id"]}' type='text' name='product_description[]' value='' placeholder='{$ps["description"]}' size='50'/></td>";
-    echo "<td><input _id='{$ps["id"]}' type='text' name='product_unit[]' value='{$ps["unit"]}' size='4'/></td>";
-    echo "<td><input _id='{$ps["id"]}' type='text' name='product_rate[]' value='{$ps["rate"]}' size='6'/></td>";
+    echo "<td><select name='product_type[{$idx}]'><option value='goods' {$goods_selected} >Goods</option><option value='service' {$service_selected} >Service</option></select></td>";
+    echo "<td><input _id='{$ps["id"]}' type='text' name='product_description[{$idx}]' value='' placeholder='{$ps["description"]}' size='50'/></td>";
+    echo "<td><input _id='{$ps["id"]}' type='text' name='product_unit[{$idx}]' value='{$ps["unit"]}' size='4'/></td>";
+    echo "<td><input _id='{$ps["id"]}' type='text' name='product_rate[{$idx}]' value='{$ps["rate"]}' size='6'/></td>";
     echo "</tr>";
 }
 
@@ -269,16 +282,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
             break;
     }
 
-    //default charts
-    createChartEntry(100,"cash",null,"Cash","Current Account",$gstclassid,null,null,null,null);
-    createChartEntry(200,"income","sale","Sale","",$gstclassid,null,null,null,null);
-    createChartEntry(300,"current asset","accounts receivable","Accounts Receivable","",$gstclassid,null,null,null,null);
-    createChartEntry(400,"current liability","accounts payable","Accounts Payable","",$gstclassid,null,null,null,null);
-    createChartEntry(500,"equity","Shares","Shares paid up","",null,null,null,null,null);
-    createChartEntry(600,"asset","fixed asset","Fixed asset","",null,null,null,null,null);
-    createChartEntry(700,"liability","shareholders","Shareholder current account","",null,null,null,null,null);
-    createChartEntry(800,"tax","gst","GST","",null,null,null,null,null);
-    createChartEntry(801,"tax","company","COMPANY TAX","",null,null,null,null,null);
+    foreach($default_charts as $c)
+    {
+
+        $chart = array();
+        $chart["chart_code"] = $c["code"];
+        $chart["chart_type"] = $c["type"];
+        $chart["chart_type_name"] = $c["typename"];
+        $chart["chart_subtype"] = $c["subtype"];
+        $chart["chart_description"] = $c["description"];
+        $chart["chart_taxclass"] = $gstclassid;
+        $chart["chart_description_dr"] = $c["desc_dr"];
+        $chart["chart_description_cr"] = $c["desc_cr"];
+        $chart["chart_balancesheet"] = $c["balance_sheet_desc"];
+        $chart["chart_balancesheet_subtype"] = $c["balance_sheet_desc_sub"];
+
+        $DB->p_create_from_array("chart",$chart);
+
+    }
 
     //Excpenses
     $n = count($chart_expenses);
@@ -309,7 +330,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
     }
 
     //Products
-    $n = count($_POST["product_checked"]);
+    $n = count($default_product_service);
     error_log("Count of products checked {$n}");
     for ($idx = 0; $idx < $n;$idx++)
     {
@@ -324,7 +345,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
             var_error_log($product,"product");
 
-            if (strlen($product["product_description"]) > 0 && $product["product_unit_cost"] == 0)
+            if (strlen($product["product_description"]) > 0)
             {
                 $DB->p_create_from_array("product",$product);
             }
@@ -447,9 +468,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
                     <table id="tblprodserv">
                         <tr><td><button type="button" onclick="addProdServiceLine()" title="Add more lines">+</button></td></tr>
                         <?php
+                        $pidx = 0;
                         foreach($default_product_service as $p)
                         {
-                            buildProductService($p);
+                            buildProductService($p,$pidx);
+                            $pidx++;
                         }
                         ?>
                     </table>

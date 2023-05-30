@@ -60,7 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
         {
 
             $undo = new Undo("PAY {$company->company_sales_tax_name->raw()}");
-            $a = AccountDate::cadenceRangeMonths($_POST["year"],$_POST["month"],$company->company_sales_tax_cadence);
+            $a = AccountDate::cadenceRangeMonths($_POST["year"],$_POST["month"],$company->company_sales_tax_cadence,false);
             $report = $DB->gstReport($a[0],$a[1]);
             $lines = $report["lines"];
             $amt = $lines[15];

@@ -49,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET")
             if (isset($a["p"]))
             {
                 $d = new DateTime($a["p"]);
-                $dateRange = AccountDate::cadenceRangeMonths(intval($d->format("Y")),intval($d->format("m")),$company->company_sales_tax_cadence);
+                $dateRange = AccountDate::cadenceRangeMonths(intval($d->format("Y")),intval($d->format("m")),$company->company_sales_tax_cadence,false);
                 $report = $DB->gstReport($dateRange[0],$dateRange[1]);
             }
         }
@@ -64,8 +64,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
         header("Location: SecurityError.php");
         exit();
     }
-    $dateRange = AccountDate::cadenceRangeMonths($_POST["year"],$_POST["month"],$company->company_sales_tax_cadence);
+    $dateRange = AccountDate::cadenceRangeMonths($_POST["year"],$_POST["month"],$company->company_sales_tax_cadence,false);
+    var_error_log($dateRange,"daterange");
     $report = $DB->gstReport($dateRange[0],$dateRange[1]);
+
 }
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -94,15 +96,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
                     <table>
                         <p>SELECT GST REPORT END MONTH</p>
                         <tr>
-                            <td>MONTH</td><td>YEAR</td>
+                            <td>END MONTH</td><td>YEAR</td>
                         </tr>
                         <?php
                         echo "<tr>";
                         echo "<td>";
                         echo "<select name='month'>";
-                        foreach ($saleTaxMonths as $m)
+                        foreach ($saleTaxMonths as $k => $m)
                         {
-                            echo "<option value='{$m}'>{$m}</options>";
+                            echo "<option value='{$k}'>{$m}</options>";
                         }
                         echo "</select>";
                         echo "</td>";

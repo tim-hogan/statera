@@ -50,6 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
     }
 
     $chart = 0;
+    $fixed_asset = false;
     $chart = FormList::getIntegerField("chart");
     $desc = FormList::getField("desc");
     $amount = FormList::getCurrencyField("amt");
@@ -57,7 +58,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
     $taxapplies = FormList::getCheckboxField("taxapplies");
     $vendname = FormList::getField("vendname");
     $vendtax = FormList::getField("vendertax");
-    
+    $depreciation_type = null;
+    $depreciation_rate = null;
+    $assetid = null;
+
     if ($taxapplies)
         error_log("Tax applies");
     if ($inctax)
@@ -70,6 +74,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
     if ($amount == 0)
         $errmsg = "You must enter an amount";
 
+    $chartrec = $DB->getChart($chart);
+    if ($chartrec)
+    {
+        if ($chartrec->chart_type->raw() == "asset")
+        {
+            //This is the purchase of an asset ot an expense
+            $fixed_asset = true;
+            $depreciation_type = FormList::getField("dep_type");
+            $depreciation_rate = FormList::getPercentField("dep_amnt");
+            
+            if ($depreciation_rate <= 0.0 || $depreciation_rate > 1.0)
+                $errmsg = "Value for depreciation rate must be greater than zero and less than 100%";
+        }
+        
+    }
+    else
+        $errmsg = "Invalid Expense Category";
+
+    
     if (strlen($errmsg) == 0)
     {
         $taxrate = $DB->getTaxRateForClassAndDate($taxclass->idtaxclass,$date);
@@ -84,6 +107,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
         else
             $ledger = LedgerAmount::createFromNet($amount,0.0);
         
+        
         if (isset($_POST["paid"]))
             $undo = new Undo("Expense been paid");
         else
@@ -91,13 +115,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
         $DB->BeginTransaction();
 
+        if ($fixed_asset)
+        {
+            $assetid = $DB->createAsset($desc,$date,$depreciation_type,$depreciation_rate);
+        }
+        
+        
         if (isset($_POST["paid"]))
-            $xtn = $DB->expensePaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,false);
+            $xtn = $DB->expensePaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid,false);
         else
-            $xtn = $DB->expenseUnPaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,false);
+            $xtn = $DB->expenseUnPaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid,false);
             
         if ($DB->EndTransaction())
         {
+            if ($fixed_asset)
+            {
+                $undo->add(new UndoAction("delete","asset","idasset",$assetid) );
+                $undolist->push($undo);
+            }
             $undo->add(new UndoAction("delete","journal","journal_xtn",$xtn) );
             $undolist->push($undo);
             $DB->updateUndoList($user->iduser,$undolist->toJSON());
@@ -125,9 +160,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
         #saleheading h1 {color: #6b6ba7;font-family: Akshar;font-weight: 300;}
         #form {padding: 20px; border: solid 1px #888; border-radius: 8px;}
         #form input {display: block;}
+        #form input[type='text'] {font-size: 12pt;}
         #form input[type='checkbox'] {margin-top: 16px;display:inline;}
         #form input[type='submit'] {margin-top: 24px;font-size: 14pt;}
-        #form select {display: block;}
+        #form select {display: block;font-size: 12pt;}
         #form label {margin-top: 16px;display: block;}
         #form label.first {margin-top: 0px;}
         #vendor {margin-top: 16px;padding: 20px;border: solid 1px #888; background-color: #f0f0f0;}
@@ -137,6 +173,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
         #form input.incgst {display: inline;font-size: 14pt;}
         #submit {margin-top: 10px; padding: 10px;border: solid 1px #aaa;}
         #submit p {font-size: 14pt; color: #888;}
+        #additional_asset {display: none;padding: 10px;border: solid 1px #888;margin: 10px;width: 400px;}
         button {margin-top: 24px;display: block;font-size: 14pt;}
         button.b1 {color: red;}
         button.b2 {color: green;}
@@ -150,6 +187,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
                         document.getElementById("taxapplies").checked = true;
                     else
                         document.getElementById("taxapplies").checked = false;
+                    if (e.getAttribute("_type") == "asset") {
+                        console.log("An asset has been selected");
+                        document.getElementById("additional_asset").style.display = "block";
+                    }
+                    else
+                        document.getElementById("additional_asset").style.display = "none";
                 }
             }
         }
@@ -165,9 +208,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
                 }
             }
         }
+
+        function start() {
+            //Find pre-select chart
+            let c = document.getElementById("chart");
+            catChange(c);
+        }
     </script>
 </head>
-<body>
+<body onload="start()">
     <div id="container">
         <?php include ("./includes/heading.html");?>
         <?php include ("./includes/menu.html");?>
@@ -210,10 +259,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
                             {
                                 $selected = (isset($formfields["chart"]) && $formfields["chart"] == $chart["chart_code"]) ? "selected" : "";
                                 $d = htmlspecialchars($chart["chart_description"]);
-                                echo "<option value='{$chart["chart_code"]}' _taxclass='{$chart['taxclass_name']}' {$selected}>{$d}</option>";
+                                echo "<option value='{$chart["chart_code"]}' _taxclass='{$chart['taxclass_name']}' _type='{$chart['chart_type']}' {$selected}>{$d}</option>";
                             }
                             ?>
                         </select>
+                    </div>
+                    <div id="additional_asset">
+                        <div class="formfield">
+                            <label for="dep_type">* DEPRECIATION METHOD</label>
+                            <select id="dep_type" name="dep_type">
+                                <option value="dv">DIMINISHING VALUE</option>
+                                <option value="sl" selected>STRAIGHT LINE</option>
+                            </select>
+                            <label for="dep_amnt">* DEPRECIATION AMMOUNT (Refer <a href="/docs/IR265.pdf" target="_blank">IR265</a>)</label>
+                            <input id="dep_amnt" name="dep_amnt" type="text" size="5" />
+                        </div>
+                        
                     </div>
                     <div class="formfield">
                         <label for="amt">* AMOUNT</label>

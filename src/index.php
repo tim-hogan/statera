@@ -71,6 +71,7 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
                         <div class="link" href="AccountsReceivable.php" onclick="sel(this)">ACCOUNTS RECEIVABLE</div>
                         <div class="link" href="BankAccounts.php" onclick="sel(this)">BANK ACCOUNTS</div>
                         <div class="link" href="GSTReport.php" onclick="sel(this)">GST REPORT</div>
+                        <div class="link" href="EndofYear.php" onclick="sel(this)">END OF YEAR</div>
                         <div class="link" href="FinancialStatements.php" onclick="sel(this)">FINANCIAL STATEMENTS</div>
                         <div class="link" href="JournalDump.php" onclick="sel(this)">JOURNAL DUMP</div>
                     </div>

@@ -167,6 +167,7 @@ cp ../src/includes/classstateraDB.php           ./webfiles/includes
 cp ../src/includes/commonSession.php            ./webfiles/includes
 cp ../src/includes/securityParams.php           ./webfiles/includes
 
+cp ../src/includes/menu.html                    ./webfiles/includes
 cp ../src/includes/footer.html                  ./webfiles/includes
 cp ../src/includes/heading.html                 ./webfiles/includes
 
@@ -201,6 +202,10 @@ cp ../src/js/st.js                              ./webfiles/js
 #copy config
 emptyandcreate webfiles/config
 cp ../src/config/StateraForm.php                ./webfiles/config
+
+#copy docs
+emptyandcreate webfiles/docs
+cp ../src/docs/IR265.pdf                        ./webfiles/docs
 
 tar -zcf ../install/statera.tar.gz .
 
