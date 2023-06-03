@@ -224,7 +224,7 @@ if $INSTALLDB ; then
         mysql ${DBNAME} -e "INSERT into global (global_default_homepage,global_default_domainname) values ('/','devt.nz')";
         
 
-        PEPPER=$(/etc/vault/getKey -s $INSTALLNAME -k PEPPER)
+        PEPPER=$(sudo /etc/vault/getKey -s $INSTALLNAME -k PEPPER)
         #create the first user in the database
         echo "Createing first database admin user"
         #create the salt and hash
