@@ -145,6 +145,7 @@ cp ../src/AccountsPayable.php                   ./webfiles
 cp ../src/AccountsReceivable.php                ./webfiles
 cp ../src/BankAccounts.php                      ./webfiles
 cp ../src/ChangePassword.php                    ./webfiles
+cp ../src/EndofYear.php                         ./webfiles
 cp ../src/Expenses.php                          ./webfiles
 cp ../src/FinancialStatements.php               ./webfiles
 cp ../src/GSTReport.php                         ./webfiles

@@ -328,6 +328,7 @@ class journal extends TableRow
                     "journal_xtn" =>["type" => "int"],
                     "journal_date" =>["type" => "date"],
                     "journal_chart" =>["type" => "int"],
+                    "journal_marker" =>["type" => "varchar"],
                     "journal_description"=>["type" => "varchar"],
                     "journal_net"=>["type" => "double"],
                     "journal_tax"=>["type" => "double"],
@@ -1014,6 +1015,35 @@ class stateraDB extends SQLPlus
         if ($j)
             return intval($j['FOLIO']);
         return 0;
+    }
+
+
+    public function getJournalFirstDate()
+    {
+        $row = $this->p_singlequery("select journal_date from journal order by journal_date asc limit 1",null,null);
+        if ($row)
+            return $row["journal_date"];
+        return null;
+    }
+
+    public function getJournalLastDate()
+    {
+        $row = $this->p_singlequery("select journal_date from journal order by journal_date desc limit 1",null,null);
+        if ($row)
+            return $row["journal_date"];
+        return null;
+    }
+
+    public function getJournalStartEOYRecord(DateTime $d)
+    {
+        $strDate = $d->format("Y-m-d H:i:s");
+        return $this->p_singlequery("select * from journal where journal_date = ? and journal_marker = 'starteoy'","s",$strDate);
+    }
+
+    public function getJournalEndEOYRecord(DateTime $d)
+    {
+        $strDate = $d->format("Y-m-d H:i:s");
+        return $this->p_singlequery("select * from journal where journal_date = ? and journal_marker = 'endeoy'","s",$strDate);
     }
 
     public function createPair($rec,$coa1,$coa2,$source=0,$enterTransaction=true)
