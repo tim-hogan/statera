@@ -235,9 +235,9 @@ cp install.zip ./package/current
 #Remote copy to devt host
 echo -e "${YELLOW}You will be asked for the deVT password as we are about to copy to the devt host${NC}"
 if ! $TEST ; then
-    echo -e "rename /var/www/html/static/statera/install.zip /var/www/html/static/statera/install-${DATE}.zip\n put install.zip /var/www/html/static/statera/install.zip" | sftp deVT@devt.nz
+    echo -e "rename /var/www/html/static/statera/install.zip /var/www/html/static/statera/install-${DATE}.zip\n put install.zip /var/www/html/static/statera/install.zip" | sftp deVT@static.devt.nz
 else
-    echo -e "put install.zip /var/www/html/static/statera/test/install.zip" | sftp deVT@devt.nz
+    echo -e "put install.zip /var/www/html/static/statera/test/install.zip" | sftp deVT@static.devt.nz
 
 fi
 
