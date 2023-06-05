@@ -183,6 +183,7 @@ class chart extends TableRow
                     "chart_type" =>["type" => "varchar"],
                     "chart_type_name" =>["type" => "varchar"],
                     "chart_subtype"=>["type" => "varchar"],
+                    "chart_subsubtype"=>["type" => "varchar"],
                     "chart_description"=>["type" => "varchar"],
                     "chart_taxclass"=>["type" => "int"],
                     "chart_description_cr"=>["type" => "varchar"],
@@ -707,10 +708,15 @@ class stateraDB extends SQLPlus
         return $this->o_singlequery("chart","select * from chart where chart_code = ?","i",$code);
     }
 
-    public function getChartFor($type,$subtype=null,$options=0)
+    public function getChartFor($type,$subtype=null,$subsubtype=null,$options=0)
     {
         if ($subtype)
-            $r = $this->p_query("select * from chart where chart_type = ? and chart_subtype = ? order by chart_code","ss",$type,$subtype);
+        {
+            if ($subsubtype)
+                $r = $this->p_query("select * from chart where chart_type = ? and chart_subtype = ? chart_subsubtype = ? order by chart_code","sss",$type,$subtype,$subsubtype);
+            else
+                $r = $this->p_query("select * from chart where chart_type = ? and chart_subtype = ? order by chart_code","ss",$type,$subtype);
+        }
         else
             $r = $this->p_query("select * from chart where chart_type = ? order by chart_code","s",$type);
 
@@ -1034,6 +1040,17 @@ class stateraDB extends SQLPlus
         return null;
     }
 
+
+    public function createJournalStartEOYRecord(DateTime $d)
+    {
+        return $this->p_create("insert into journal (journal_date,journal_marker) values (?,'starteoy')","s",$d);
+    }
+
+    public function createJournalEndEOYRecord(DateTime $d)
+    {
+        return $this->p_create("insert into journal (journal_date,journal_marker) values (?,'starteoy')","s",$d);
+    }
+
     public function getJournalStartEOYRecord(DateTime $d)
     {
         $strDate = $d->format("Y-m-d H:i:s");
@@ -1104,7 +1121,7 @@ class stateraDB extends SQLPlus
         //Now find coa
         if (!$chart1)
         {
-            $c = $this->getChartFor('cash',null,SEARCH_FIRST);
+            $c = $this->getChartFor('cash',null,,null,SEARCH_FIRST);
             if (! $c)
                 throw (new Exception("Unable to find chart for current asset/accounts receivable"));
             $chart1 = $c->chart_code;
@@ -1144,7 +1161,7 @@ class stateraDB extends SQLPlus
         //Now find coa
         if (!$chart1)
         {
-            $c = $this->getChartFor('current asset',"accounts receivable",SEARCH_FIRST);
+            $c = $this->getChartFor('current asset',"accounts receivable",null,SEARCH_FIRST);
             if (! $c)
                 throw (new Exception("Unable to find chart for current asset/accounts receivable"));
             $chart1 = $c->chart_code;
@@ -1186,14 +1203,14 @@ class stateraDB extends SQLPlus
         //Now find coa
         if (!$chart1)
         {
-            $c = $this->getChartFor('cash',null,SEARCH_FIRST);
+            $c = $this->getChartFor('cash',null,null,SEARCH_FIRST);
             if (! $c)
                 throw (new Exception("Unable to find chart for current asset/accounts receivable"));
             $chart1 = $c->chart_code;
         }
         if (!$chart2)
         {
-            $c = $this->getChartFor('expense',null,SEARCH_FIRST);
+            $c = $this->getChartFor('expense',null,null,SEARCH_FIRST);
             if (! $c)
                 throw (new Exception("Unable to find chart for current income/sale"));
             $chart2 = $c->chart_code;
@@ -1227,14 +1244,14 @@ class stateraDB extends SQLPlus
         //Now find coa
         if (!$chart1)
         {
-            $c = $this->getChartFor('current liability','accounts payable',SEARCH_FIRST);
+            $c = $this->getChartFor('current liability','accounts payable',null,SEARCH_FIRST);
             if (! $c)
                 throw (new Exception("Unable to find chart for current asset/accounts receivable"));
             $chart1 = $c->chart_code;
         }
         if (!$chart2)
         {
-            $c = $this->getChartFor('expense',null,SEARCH_FIRST);
+            $c = $this->getChartFor('expense',null,null,SEARCH_FIRST);
             if (! $c)
                 throw (new Exception("Unable to find chart for current income/sale"));
             $chart2 = $c->chart_code;
@@ -1266,7 +1283,7 @@ class stateraDB extends SQLPlus
 
     public function getAccountPayable($xtn)
     {
-        $c = $this->getChartFor('current liability','accounts payable',SEARCH_FIRST);
+        $c = $this->getChartFor('current liability','accounts payable',null,SEARCH_FIRST);
         if ($c)
         {
             $code = $c->chart_code;
@@ -1285,7 +1302,7 @@ class stateraDB extends SQLPlus
             unset($rec["journal_link"]);
             unset($rec["journal_chart"]);
 
-            $c = $this->getChartFor('cash',null,SEARCH_FIRST);
+            $c = $this->getChartFor('cash',null,null,SEARCH_FIRST);
             if (! $c)
                 throw (new Exception("Unable to find chart for current asset/accounts receivable"));
             $chart1 = $c->chart_code;
@@ -1315,7 +1332,7 @@ class stateraDB extends SQLPlus
 
     public function getAccountReceivable($xtn)
     {
-        $c = $this->getChartFor('current asset','accounts receivable',SEARCH_FIRST);
+        $c = $this->getChartFor('current asset','accounts receivable',null,SEARCH_FIRST);
         if ($c)
         {
             $code = $c->chart_code;
@@ -1353,6 +1370,35 @@ class stateraDB extends SQLPlus
         return null;
     }
 
+    public function assetOrginalValue($assetid)
+    {
+        $q = "select journal_net as NET from journal left join chart on chart_code = journal_chart where chart_type = 'asset' and chart_subtype ='fixed_asset' and jounal_asset = ? order by journal_date limit 1";
+        $row = $this->p_singlequery($q,"i",$assetid);
+        if ($row)
+            return $row["NET"];
+    }
+
+    public function assetAgeMonths($assetid,$date)
+    {
+        $q = "select journal_date from journal left join chart on chart_code = journal_chart where chart_type = 'asset' and chart_subtype ='fixed_asset' and jounal_asset = ? order by journal_date limit 1";
+        $row = $this->p_singlequery($q,"i",$assetid);
+        if ($row)
+        {
+            $elapsedseconds = (new DateTime($date))->getTimestamp() - (new DateTime($row["journal_date"]))->getTimestamp();
+            return ($elapsedseconds/2628000,0);
+        }
+        return null;
+    }
+
+    public function assetCurrentValue($assetid,$yearenddate)
+    {
+        $q = "select sum(journal_net) as SUM from journal left join chart on chart_code = journal_chart where chart_type = 'asset' and chart_subtype ='fixed_asset' and jounal_asset = ? and journal_date <= '?'";
+        $row = $this->p_singlequery($q,"is",$assetid,$yearenddate);
+        if ($row)
+            return $row["SUM"];
+        return null;
+    }
+
     public function payAccountsReceivable($xtn,$amount)
     {
         $rec = $this->getAccountReceivable($xtn);
@@ -1364,7 +1410,7 @@ class stateraDB extends SQLPlus
             unset($rec["journal_link"]);
             unset($rec["journal_chart"]);
 
-            $c = $this->getChartFor('cash',null,SEARCH_FIRST);
+            $c = $this->getChartFor('cash',null,null,SEARCH_FIRST);
             if (! $c)
                 throw (new Exception("Unable to find chart for current asset/accounts receivable"));
             $chart1 = $c->chart_code;
@@ -1421,17 +1467,17 @@ class stateraDB extends SQLPlus
         $rec['journal_shareholder'] = $to;
 
 
-        $c = $this->getChartFor('cash',null,SEARCH_FIRST);
+        $c = $this->getChartFor('cash',null,null,SEARCH_FIRST);
         if (! $c)
             throw (new Exception("Unable to find chart for cash"));
         $chart1 = $c->chart_code;
 
-        $c = $this->getChartFor('equity','shares',SEARCH_FIRST);
+        $c = $this->getChartFor('equity','shares',null,SEARCH_FIRST);
         if (! $c)
             throw (new Exception("Unable to find chart for equity/shares"));
         $chart2 = $c->chart_code;
 
-        $c = $this->getChartFor('liability','shareholders',SEARCH_FIRST);
+        $c = $this->getChartFor('liability','shareholders',null,SEARCH_FIRST);
         if (! $c)
             throw (new Exception("Unable to find chart for equity/shares"));
         $chart3 = $c->chart_code;
@@ -1472,12 +1518,12 @@ class stateraDB extends SQLPlus
         $rec['journal_description'] = "{$taxname} Paid";
         $rec['journal_tax_date'] = $taxdate;
 
-        $c = $this->getChartFor('cash',null,SEARCH_FIRST);
+        $c = $this->getChartFor('cash',null,null,SEARCH_FIRST);
         if (! $c)
             throw (new Exception("Unable to find chart for cash"));
         $chart1 = $c->chart_code;
 
-        $c = $this->getChartFor('tax',$taxname,SEARCH_FIRST);
+        $c = $this->getChartFor('tax',$taxname,null,SEARCH_FIRST);
         if (! $c)
             throw (new Exception("Unable to find chart for tax/{$taxname}"));
         $chart2 = $c->chart_code;
@@ -1497,7 +1543,7 @@ class stateraDB extends SQLPlus
             $rec['journal_description'] = "{$taxname} Paid Roundoff";
             $rec['journal_tax_date'] = $taxdate;
 
-            $c = $this->getChartFor('expense','GST Tax rounding',SEARCH_FIRST);
+            $c = $this->getChartFor('expense','GST Tax rounding',null,SEARCH_FIRST);
             if (! $c)
                 throw (new Exception("Unable to find chart for expense/{$taxname}"));
             $chart3 = $c->chart_code;
@@ -1688,9 +1734,13 @@ class stateraDB extends SQLPlus
 
         /***************************************************************************************************************
          * EXPENDITURE
+         *
+         * OPERATING
          */
+        $ret["expenditure"] = array();
+
         $expenditure = array();
-        $r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'expense' group by chart_code, chart_description,chart_type, chart_subtype","ss",$from,$to);
+        $r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'expense' and chart_subtype = 'operating' group by chart_code, chart_description,chart_type, chart_subtype","ss",$from,$to);
         while ($j = $r->fetch_assoc())
         {
             $code = $j['chart_code'];
@@ -1700,7 +1750,24 @@ class stateraDB extends SQLPlus
             $expenditure[$code] ["net"] = -($j['NET']);
         }
 
-        $ret["expenditure"] = $expenditure;
+        $ret["expenditure"] ["operating"] = $expenditure;
+
+        $expenditure = array();
+        $r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'expense' and chart_subtype = 'financial' group by chart_code, chart_description,chart_type, chart_subtype","ss",$from,$to);
+        while ($j = $r->fetch_assoc())
+        {
+            $code = $j['chart_code'];
+            if (!isset($expenditure[$code]))
+                $expenditure[$code] = array();
+            $expenditure[$code] ["name"] = $j['chart_description'];
+            $expenditure[$code] ["net"] = -($j['NET']);
+        }
+
+        $ret["expenditure"] ["financial"] = $expenditure;
+
+
+         /* Financial
+         */
 
         /***************************************************************************************************************
          * ASSETS

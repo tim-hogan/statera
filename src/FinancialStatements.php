@@ -173,9 +173,11 @@ $balance_sheet = $DB->financialreport("2022-04-01","2023-03-31");
                     <tr><td class='blank1' colspan='6'></td></tr>
                     <tr><td class="h1" colspan="6">EXPENDITURE</td></tr>
                     <tr><td class='blank1' colspan='6'></td></tr>
+                    <tr><td></td><td class="h2" colspan="5">OPERATING</td></tr>
+                    <tr><td class='blank1' colspan='6'></td></tr>
                     <?php
                     $sumE = 0;
-                    foreach($balance_sheet["expenditure"] as $d)
+                    foreach($balance_sheet["expenditure"] ["operating"] as $d)
                     {
                         $v = LedgerAmount::format1(-$d["net"]);
                         $desc = htmlspecialchars($d["name"]);
@@ -191,8 +193,24 @@ $balance_sheet = $DB->financialreport("2022-04-01","2023-03-31");
                     $v = LedgerAmount::format1($ebitda);
                     echo "<tr><td></td><td></td><td>EBITDA</td><td></td><td></td><td class='r tot1'>{$v}</td></tr>";
 
+                    ?>
+                    <tr><td class='blank1' colspan='6'></td></tr>
+                    <tr><td></td><td class="h2" colspan="5">FINANCIAL</td></tr>
+                    <tr><td class='blank1' colspan='6'></td></tr>
 
-                    $retained_funds = $ebitda;
+                    <?php
+                    $sumE = 0;
+                    foreach($balance_sheet["expenditure"] ["financial"] as $d)
+                    {
+                        $v = LedgerAmount::format1(-$d["net"]);
+                        $desc = htmlspecialchars($d["name"]);
+                        echo "<tr><td></td><td></td><td class='td1'>{$desc}</td><td class='r'>{$v}</td></tr>";
+                        $sumE -= $d["net"];
+                    }
+                    $v = LedgerAmount::format1($sumE);
+                    echo "<tr><td></td><td></td><td>Net Profit</td><td></td><td class='r tot1'>{$v}</td></tr>";
+
+                    $retained_funds = $ebitda - $sumE;
 
 
                     ?>

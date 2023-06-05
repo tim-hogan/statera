@@ -47,7 +47,7 @@ $default_charts = [
 ];
 
 //Chart expeneses m = mandatory
-$chart_expenses = [
+$chart_expenses_operating = [
     ["Desc" => "ACC Levies", "tax" => 1, "m" => 0],
     ["Desc" => "Accomodation", "tax" => 1, "m" => 0],
     ["Desc" => "Accountants", "tax" => 1, "m" => 0],
@@ -93,6 +93,13 @@ $chart_expenses = [
     ["Desc" => "Uniforms", "tax" => 1, "m" => 0,],
     ["Desc" => "Water rates", "tax" => 1, "m" => 0,]
     ];
+
+$chart_expenses_financial = [
+    ["Desc" => "Depreciation", "subsubtype" => "depreciation", "tax" => 0, "m" => 1],
+    ["Desc" => "Interest Paid", "subsubtype" => "interest","tax" => 0, "m" => 1]
+];
+
+
 function createDefaultValues()
 {
     global $formfields;
@@ -301,23 +308,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
     }
 
-    //Excpenses
-    $n = count($chart_expenses);
+    //Excpenses operating
+    $n = count($chart_expenses_operating);
     error_log("Count of expenses checked {$n}");
 
     $idcode = 900;
     for ($idx=0; $idx < $n;$idx++)
     {
-        if ($chart_expenses[$idx] ["m"]  || (isset($_POST["expense_checked"] [$idx]) && $_POST["expense_checked"] [$idx] == "on"))
+        if ($chart_expenses_operating[$idx] ["m"]  || (isset($_POST["expense_checked"] [$idx]) && $_POST["expense_checked"] [$idx] == "on"))
         {
             $chart = array();
             $chart["chart_code"] = $idcode;
             $chart["chart_type"] = "expense";
-            $chart["chart_description_dr"] = $chart_expenses[$idx] ["Desc"];
+            $chart["chart_description_dr"] = $chart_expenses_operating[$idx] ["Desc"];
             $chart["chart_type_name"] = "Expense";
-            $chart["chart_subtype"] = "";
-            $chart["chart_description"] = $chart_expenses[$idx] ["Desc"];
-            if ($chart_expenses[$idx] ["tax"])
+            $chart["chart_subtype"] = "operating";
+            $chart["chart_description"] = $chart_expenses_operating[$idx] ["Desc"];
+            if ($chart_expenses_operating[$idx] ["tax"])
+                $chart["chart_taxclass"] = $gstclassid;
+            $chart["chart_description_cr"] = "";
+            $chart["chart_balancesheet"] = "expense";
+            $chart["chart_balancesheet_subtype"] = "";
+
+            $DB->p_create_from_array("chart",$chart);
+
+            $idcode += 2;
+        }
+    }
+
+    //expenses financial
+    $n = count($chart_expenses_financial);
+    error_log("Count of expenses checked {$n}");
+
+    for ($idx=0; $idx < $n;$idx++)
+    {
+        if ($chart_expenses_financial[$idx] ["m"] )
+        {
+            $chart = array();
+            $chart["chart_code"] = $idcode;
+            $chart["chart_type"] = "expense";
+            $chart["chart_description_dr"] = $chart_expenses_financial[$idx] ["Desc"];
+            $chart["chart_type_name"] = "Expense";
+            $chart["chart_subtype"] = "financial";
+            $chart["chart_subsubtype"] = $chart_expenses_financial[$idx] ["subsubtype"];
+            $chart["chart_description"] = $chart_expenses_financial[$idx] ["Desc"];
+            if ($chart_expenses_financial[$idx] ["tax"])
                 $chart["chart_taxclass"] = $gstclassid;
             $chart["chart_description_cr"] = "";
             $chart["chart_balancesheet"] = "expense";

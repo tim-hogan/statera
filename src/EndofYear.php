@@ -51,6 +51,63 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
     {
         $year_end = $_POST["complete"];
         error_log("Year end is {$year_end}");
+
+        //Check to see if we have laready got an endo f year record
+        if (!$DB->getJournalStartEOYRecord($year_end) &&  !$DB->getJournalEndEOYRecord($year_end))
+        {
+            $DB->BeginTransaction();
+
+            $DB->createJournalStartEOYRecord($year_end);
+
+            //Calculate depreciation
+            $coa1 = $this->getChartFor('asset','fixed_asset',null,SEARCH_FIRST);
+            $coa2 = $this->getChartFor('expense','financial','depreciation',SEARCH_FIRST);
+            $r = $DB->allAssets();
+            while ($asset = $r->fetch_object("asset"))
+            {
+                $current_value = $DB->assetValue($asset["idasset"],$year_end);
+                $orginal_value = $DB->assetOrginalValue($asset["idasset"]);
+                $ageMonths = $DB->assetAgeMonths($asset["idasset"],$year_end);
+                if ($orginal_value > 0)
+                {
+                    //Create a depritiation record
+                    $j1["journal_date"] = $year_end;
+                    $j1["journal_asset"] = $asset["idasset"];
+                    $j1["journal_description"] = "Depreciation";
+                    $j1["journal_tax"] = 0.00;
+                    $j1["journal_gross"] = 0.00;
+
+                    $depreciation = 0.0;
+                    if ($asset["asset_depreciation_method"] == "sl")
+                    {
+                        if ($ageMonths > 0)
+                        {
+                            if ($ageMonths >= 12)
+                            {
+                                $depreciation = $orginal_value * $asset["asset_depreciation_rate"];
+                            }
+                            else
+                            {
+                                $depreciation = $orginal_value * $asset["asset_depreciation_rate"];
+                                $depreciation *= floatval($ageMonths)/12.0;
+                            }
+                        }
+                    }
+
+                    $j1["journal_net"] = -($depreciation);
+
+                    $DB->createPair($j1,$coa1,$coa2,0,false);
+                }
+            }
+
+            $DB->createJournalEndEOYRecord($year_end);
+
+            if (! $DB->EndTransaction() )
+                $strerr = "Database error performing eod of year processing";
+
+        }
+        else
+            $strerr="End of year has already been processed";
     }
 
 }

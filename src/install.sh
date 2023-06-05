@@ -205,6 +205,7 @@ if $INSTALLDB ; then
             DB_PW="$(openssl rand -hex 8)"
             PEPPER="$(openssl rand -hex 32)"
             COOKIE_KEY="$(openssl rand -hex 32)"
+            BACKUPKEY="$(openssl rand -hex 16 | base64)"
 
             vault newshelf -s $INSTALLNAME
             vault add -s $INSTALLNAME -k PEPPER -v $PEPPER
@@ -213,6 +214,7 @@ if $INSTALLDB ; then
             vault add -s $INSTALLNAME -k DATABASE_USER -v $DB_USER
             vault add -s $INSTALLNAME -k DATABASE_PW -v $DB_PW
             vault add -s $INSTALLNAME -k COOKIE_KEY -v $COOKIE_KEY
+            vault add -s $INSTALLNAME -k BACKUPKEY -v $BACKUPKEY
             
             mysql -e "CREATE USER '${DB_USER}'@'%' IDENTIFIED BY '${DB_PW}'"
             mysql -e "GRANT ALL ON ${DBNAME}.* TO '${DB_USER}'@'%'"
@@ -224,13 +226,17 @@ if $INSTALLDB ; then
         mysql ${DBNAME} -e "INSERT into global (global_default_homepage,global_default_domainname) values ('/','devt.nz')";
         
 
-        PEPPER=$(sudo /etc/vault/getKey -s $INSTALLNAME -k PEPPER)
+        PEPPER=$(sudo php /etc/vault/getKey -s $INSTALLNAME -k PEPPER)
+        echo "PEPPER ${PEPPER}"
         #create the first user in the database
         echo "Createing first database admin user"
         #create the salt and hash
         SALT="$(openssl rand -hex 32)"
-        HASH1="$(echo -n "${SALT}${PEPPER}" | openssl dgst -sha256 | cut -c 10-73)"
-        HASH="$(echo -n "admin${HASH1}" | openssl dgst -sha256  | cut -c 10-73)"
+        H1="$(echo -n "${SALT}${PEPPER}" | openssl dgst -sha256)"
+        HASH1=${H1:$((${#H1} - 64)):64}
+        H1="$(echo -n "admin${HASH1}" | openssl dgst -sha256)"
+        HASH=${H1:$((${#H1} - 64)):64}
+        
         RAND1="$(openssl rand -hex 8)"
         SESSION_KEY="$(openssl rand -hex 32)"
 

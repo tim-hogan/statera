@@ -19,8 +19,10 @@ PEPPER=$(/etc/vault/getKey -s statera -k PEPPER)
 echo "Createing first database admin user"
 #create the salt and hash
 SALT="$(openssl rand -hex 32)"
-HASH1="$(echo -n "${SALT}${PEPPER}" | openssl dgst -sha256 | cut -c 10-73)"
-HASH="$(echo -n "admin${HASH1}" | openssl dgst -sha256  | cut -c 10-73)"
+H1="$(echo -n "${SALT}${PEPPER}" | openssl dgst -sha256)"
+HASH1=${H1:$((${#H1} - 64)):64}
+H1="$(echo -n "admin${HASH1}" | openssl dgst -sha256)"
+HASH=${H1:$((${#H1} - 64)):64}
 
 RAND1="$(openssl rand -hex 8)"
 SESSION_KEY="$(openssl rand -hex 32)"
