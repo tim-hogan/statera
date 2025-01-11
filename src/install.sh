@@ -113,7 +113,7 @@ fi
 WEBDIR="/var/www/html/${INSTALLNAME}"
 DBNAME="${INSTALLNAME}"
 
-if  [[ -z $HOSTNAMEr ]] ; then
+if  [[ -z $HOSTNAME ]] ; then
     HOSTNAME="${INSTALLNAME}.devt.nz"
 fi
 
