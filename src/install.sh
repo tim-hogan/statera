@@ -82,7 +82,7 @@ while getopts ":dfghi:s:u" o; do
         i)
             INSTALLNAME=${OPTARG}
             ;;
-        i)
+        s)
             HOSTNAME=${OPTARG}
             ;;
         u)
