@@ -45,7 +45,7 @@ function usage()
     echo "Usage:"
     echo "    INSTALL"
     echo "    -------"
-    echo "    $0 [-fg] -i <installation name>"
+    echo "    $0 [-fg] -i <installation name> [-s <hostname>]"
     echo " "
     echo "    UNINSTALL"
     echo "    ---------"
@@ -54,13 +54,14 @@ function usage()
     echo "    OPTIONS"
     echo "    ---------"
     echo "    -i <installation name> Required to specify the database and installation name"
+    echo "    -s <host name> Optional web address"
     echo "    -f Install files only"
     echo "    -g Install files and database (Skip website)"
     echo "    -d Database only"
 
 }
 
-while getopts ":dfghi:u" o; do
+while getopts ":dfghi:s:u" o; do
     case "${o}" in
         d)
             INSTALLFILES=false    
@@ -80,6 +81,9 @@ while getopts ":dfghi:u" o; do
             ;;
         i)
             INSTALLNAME=${OPTARG}
+            ;;
+        i)
+            HOSTNAME=${OPTARG}
             ;;
         u)
             UNINSTALL=true
@@ -108,6 +112,12 @@ fi
 
 WEBDIR="/var/www/html/${INSTALLNAME}"
 DBNAME="${INSTALLNAME}"
+
+if  [[ -z $HOSTNAMEr ]] ; then
+    HOSTNAME="${INSTALLNAME}.devt.nz"
+fi
+
+
 HOSTNAME="${INSTALLNAME}.devt.nz"
 
 echo -e "${GREEN}-------------------------------------------------------------------------------${NC}"

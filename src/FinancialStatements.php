@@ -49,11 +49,11 @@ $balance_sheet = $DB->financialreport("2022-04-01","2023-03-31");
         #fixedassetts th {text-align: left;min-width: 16px;padding-right: 20px;}
         #fixedassetts th.th1 {border-bottom: solid 1px black;}
         #fixedassetts th.th2 {border-bottom: solid 1px black;text-align: right;padding-right: 0px;padding-left: 20px;}
-        #fixedassetts td {font-size: 10pt;}
+        #fixedassetts td {font-size: 10pt;padding-left: 20px;}
+        #fixedassetts td.td2 {font-size: 10pt;padding-left: 0px;text-align: left;min-width: auto;}
 
 
-
-
+        .l {text-align: left;}
         .r {text-align: right;}
         @media screen {
             .page {width: 800px; margin: auto; margin-bottom: 10px;padding: 10px;border: solid 10px #aaa;}
@@ -208,7 +208,7 @@ $balance_sheet = $DB->financialreport("2022-04-01","2023-03-31");
                         $sumE -= $d["net"];
                     }
                     $v = LedgerAmount::format1($sumE);
-                    echo "<tr><td></td><td></td><td>Net Profit</td><td></td><td class='r tot1'>{$v}</td></tr>";
+                    echo "<tr><td></td><td></td><td>Net Profit</td><td></td><td></td><td class='r tot1'>{$v}</td></tr>";
 
                     $retained_funds = $ebitda - $sumE;
 
@@ -403,7 +403,7 @@ $balance_sheet = $DB->financialreport("2022-04-01","2023-03-31");
                 <div class="table">
                     <table>
                         <tr>
-                            <th class="th1">ID</th><th class="th1">DATE</th><th class="th2">DESCRIPTION</th><th class="th2">NET VALUE</th>
+                            <th class="th1">ID</th><th class="th2 r">DATE</th><th class="th2">DESCRIPTION</th><th class="th2">AMOUNT</th><th class="th2">NET VALUE</th>
                         </tr>
                         <?php
                         $r = $DB->allAssets();
@@ -418,14 +418,15 @@ $balance_sheet = $DB->financialreport("2022-04-01","2023-03-31");
                                 {
                                     $bal = $j["journal_net"];
                                     $strBal = LedgerAmount::format1($bal);
-                                    echo "<tr><td>{$asset->idasset}</td><td>{$date}</td><td>{$asset->asset_name->toHTML()}</td><td class='r'>{$strBal}</td></tr>";
+                                    echo "<tr><td class='td2'>{$asset->idasset}</td><td class='r'>{$date}</td><td>{$asset->asset_name->toHTML()}</td><td></td><td class='r'>{$strBal}</td></tr>";
                                     $first = true;
                                 }
                                 else
                                 {
                                     $bal = $bal + $j["journal_net"];
                                     $strBal = LedgerAmount::format1($bal);
-                                    echo "<tr><td></td><td>{$date}</td><td></td><td class='r'>{$strBal}</td></tr>";
+                                    $strXtn = LedgerAmount::format1($j["journal_net"]);
+                                    echo "<tr><td></td><td class='r'>{$date}</td><td></td><td class='r'>{$strXtn}</td><td class='r'>{$strBal}</td></tr>";
                                 }
                             }
                         }

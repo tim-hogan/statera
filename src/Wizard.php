@@ -367,22 +367,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
     //Products
     $n = count($default_product_service);
     error_log("Count of products checked {$n}");
-    for ($idx = 0; $idx < $n;$idx++)
+    if (isset($_POST["product_checked"]))
     {
-        if ($_POST["product_checked"] [$idx] == "on")
+        for ($idx = 0; $idx < $n;$idx++)
         {
-
-            $product = array();
-            $product["product_description"] = FormList::getIndexField("product_description",$idx);
-            $product["product_unit_cost"] = FormList::getIndexedCurrencyField("product_rate",$idx);
-            $product["product_unit_text"] = FormList::getIndexField("product_unit",$idx);
-            $product["product_type"] = strtolower(FormList::getIndexField("product_type",$idx));
-
-            var_error_log($product,"product");
-
-            if (strlen($product["product_description"]) > 0)
+            if (isset($_POST["product_checked"] [$idx]) && $_POST["product_checked"] [$idx] == "on")
             {
-                $DB->p_create_from_array("product",$product);
+
+                $product = array();
+                $product["product_description"] = FormList::getIndexField("product_description",$idx);
+                $product["product_unit_cost"] = FormList::getIndexedCurrencyField("product_rate",$idx);
+                $product["product_unit_text"] = FormList::getIndexField("product_unit",$idx);
+                $product["product_type"] = strtolower(FormList::getIndexField("product_type",$idx));
+
+                var_error_log($product,"product");
+
+                if (strlen($product["product_description"]) > 0)
+                {
+                    $DB->p_create_from_array("product",$product);
+                }
             }
         }
     }
@@ -488,7 +491,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
                     <table id="tblprodserv">
                         <?php
                         $idx = 0;
-                        foreach($chart_expenses as $e)
+                        foreach($chart_expenses_operating as $e)
                         {
                             if ($e["m"] != 1)
                                 buildExpenseLine($e,$idx);

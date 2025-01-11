@@ -1,4 +1,5 @@
 <?php
+use Vtiful\Kernel\Format;
 //devt.Version = 1.0
 require_once dirname(__FILE__) . '/classSQLPlus2.php';
 require_once dirname(__FILE__) . '/classAccounts.php';
@@ -713,7 +714,7 @@ class stateraDB extends SQLPlus
         if ($subtype)
         {
             if ($subsubtype)
-                $r = $this->p_query("select * from chart where chart_type = ? and chart_subtype = ? chart_subsubtype = ? order by chart_code","sss",$type,$subtype,$subsubtype);
+                $r = $this->p_query("select * from chart where chart_type = ? and chart_subtype = ? and chart_subsubtype = ? order by chart_code","sss",$type,$subtype,$subsubtype);
             else
                 $r = $this->p_query("select * from chart where chart_type = ? and chart_subtype = ? order by chart_code","ss",$type,$subtype);
         }
@@ -1043,12 +1044,14 @@ class stateraDB extends SQLPlus
 
     public function createJournalStartEOYRecord(DateTime $d)
     {
-        return $this->p_create("insert into journal (journal_date,journal_marker) values (?,'starteoy')","s",$d);
+        $strDate = $d->format("Y-m-d H:i:s");
+        return $this->p_create("insert into journal (journal_date,journal_marker) values (?,'starteoy')","s",$strDate);
     }
 
     public function createJournalEndEOYRecord(DateTime $d)
     {
-        return $this->p_create("insert into journal (journal_date,journal_marker) values (?,'starteoy')","s",$d);
+        $strDate = $d->format("Y-m-d H:i:s");
+        return $this->p_create("insert into journal (journal_date,journal_marker) values (?,'endeoy')","s",$strDate);
     }
 
     public function getJournalStartEOYRecord(DateTime $d)
@@ -1121,7 +1124,7 @@ class stateraDB extends SQLPlus
         //Now find coa
         if (!$chart1)
         {
-            $c = $this->getChartFor('cash',null,,null,SEARCH_FIRST);
+            $c = $this->getChartFor('cash',null,null,SEARCH_FIRST);
             if (! $c)
                 throw (new Exception("Unable to find chart for current asset/accounts receivable"));
             $chart1 = $c->chart_code;
@@ -1362,7 +1365,7 @@ class stateraDB extends SQLPlus
 
     public function everyAssetJournals($assetid)
     {
-        $q = "select * from journal left join asset on idasset = journal_asset left join chart on chart_code = journal_chart where jounal_asset = {$assetid} and chart_type = 'asset' and chart_subtype ='fixed_asset'";
+        $q = "select * from journal left join asset on idasset = journal_asset left join chart on chart_code = journal_chart where journal_asset = {$assetid} and chart_type = 'asset' and chart_subtype ='fixed_asset'";
         $r = $this->p_query("select * from journal left join asset on idasset = journal_asset left join chart on chart_code = journal_chart where journal_asset = ? and chart_type = 'asset' and chart_subtype ='fixed_asset'","i",$assetid);
         if (!$r) {$this->sqlError($q); return null;}
         if ($r->num_rows > 0)
@@ -1372,28 +1375,30 @@ class stateraDB extends SQLPlus
 
     public function assetOrginalValue($assetid)
     {
-        $q = "select journal_net as NET from journal left join chart on chart_code = journal_chart where chart_type = 'asset' and chart_subtype ='fixed_asset' and jounal_asset = ? order by journal_date limit 1";
+        $q = "select journal_net as NET from journal left join chart on chart_code = journal_chart where chart_type = 'asset' and chart_subtype ='fixed_asset' and journal_asset = ? order by journal_date limit 1";
         $row = $this->p_singlequery($q,"i",$assetid);
         if ($row)
             return $row["NET"];
     }
 
-    public function assetAgeMonths($assetid,$date)
+    public function assetAgeMonths($assetid,DateTime $date)
     {
-        $q = "select journal_date from journal left join chart on chart_code = journal_chart where chart_type = 'asset' and chart_subtype ='fixed_asset' and jounal_asset = ? order by journal_date limit 1";
+        $q = "select journal_date from journal left join chart on chart_code = journal_chart where chart_type = 'asset' and chart_subtype ='fixed_asset' and journal_asset = ? order by journal_date limit 1";
         $row = $this->p_singlequery($q,"i",$assetid);
         if ($row)
         {
-            $elapsedseconds = (new DateTime($date))->getTimestamp() - (new DateTime($row["journal_date"]))->getTimestamp();
-            return ($elapsedseconds/2628000,0);
+            $elapsedseconds = $date->getTimestamp() - (new DateTime($row["journal_date"]))->getTimestamp();
+            return round($elapsedseconds/2628000,0);
         }
         return null;
     }
 
-    public function assetCurrentValue($assetid,$yearenddate)
+    public function assetCurrentValue($assetid,DateTime $yearenddate)
     {
-        $q = "select sum(journal_net) as SUM from journal left join chart on chart_code = journal_chart where chart_type = 'asset' and chart_subtype ='fixed_asset' and jounal_asset = ? and journal_date <= '?'";
-        $row = $this->p_singlequery($q,"is",$assetid,$yearenddate);
+        $strdate = $yearenddate->format("Y-m-d H:i:s");
+
+        $q = "select sum(journal_net) as SUM from journal left join chart on chart_code = journal_chart where chart_type = 'asset' and chart_subtype ='fixed_asset' and journal_asset = ? and journal_date <= ?";
+        $row = $this->p_singlequery($q,"is",$assetid,$strdate);
         if ($row)
             return $row["SUM"];
         return null;
