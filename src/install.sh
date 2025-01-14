@@ -39,6 +39,7 @@ INSTALLFILES=true
 INSTALLDB=true
 INSTALLWEB=true
 UNINSTALL=false
+IGNORECERTBOT=false
 
 function usage()
 {
@@ -58,10 +59,11 @@ function usage()
     echo "    -f Install files only"
     echo "    -g Install files and database (Skip website)"
     echo "    -d Database only"
+    echo "    -x Ignore Certbot"
 
 }
 
-while getopts ":dfghi:s:u" o; do
+while getopts ":dfghi:s:ux" o; do
     case "${o}" in
         d)
             INSTALLFILES=false    
@@ -87,6 +89,9 @@ while getopts ":dfghi:s:u" o; do
             ;;
         u)
             UNINSTALL=true
+            ;;
+        x)
+            IGNORECERTBOT=true
             ;;
         *)
             error
@@ -275,7 +280,9 @@ Header always set Strict-Transport-Security \"max-age=63072000; includeSubdomain
     echo -e "Enable web site"
     a2ensite $HOSTNAME
     systemctl reload apache2
-    certbot -n --apache -d $HOSTNAME --redirect
+    if ! $IGNORECERTBOT ; then
+        certbot -n --apache -d $HOSTNAME --redirect
+    fi
     systemctl reload apache2
 fi
 

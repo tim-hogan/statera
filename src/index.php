@@ -96,6 +96,7 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 						<div class="link" href="MaintSel.php?t=taxrate" onclick="sel(this)">TAX RATES</div>
 						<div class="link" href="MaintSel.php?t=chart" onclick="sel(this)">CHART OF ACCOUNTS</div>
 						<div class="link" href="MaintSel.php?t=shareholder" onclick="sel(this)">SHARE HOLDERS</div>
+                        <div class="link" href="ShareIssue.php" onclick="sel(this)">ISSUE SHARES</div>
 						<div class="link" href="MaintSel.php?t=staff" onclick="sel(this)">STAFF</div>
 					</div>
 				</div>

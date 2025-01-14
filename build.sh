@@ -34,11 +34,11 @@ TEST=false
 
 
 usage () {
-    echo -e "$0 Useage"
-    echo -e "  $0 [-hi]"
-    echo -e "     -h Help"
-    echo -e "     -i Ignore GIT pulls and push"
-    echo -e "     -t <branch> Test system and test branch"
+	echo -e "$0 Useage"
+	echo -e "  $0 [-hi]"
+	echo -e "     -h Help"
+	echo -e "     -i Ignore GIT pulls and push"
+	echo -e "     -t <branch> Test system and test branch"
 }
 
 emptyandcreate () {
@@ -55,23 +55,23 @@ if [ "$EUID" -eq 0 ]; then
 fi
 
 while getopts ":hit:" o; do
-    case "${o}" in
-        h)
-            usage
-            exit 0
-            ;;
-        i)
-            INGNOREGIT=true
-            ;;
-        t)
-            BRANCH=${OPTARG}
-            TEST=true
-            ;;
-        *)
-            usage
-            exit 1
-            ;;
-    esac
+	case "${o}" in
+		h)
+			usage
+			exit 0
+			;;
+		i)
+			INGNOREGIT=true
+			;;
+		t)
+			BRANCH=${OPTARG}
+			TEST=true
+			;;
+		*)
+			usage
+			exit 1
+			;;
+	esac
 done
 
 echo -e "${GREEN}===============${NC}"
@@ -84,33 +84,33 @@ echo -e "${GREEN}===============${NC}"
 #*****************************************************************************************
 if ! $INGNOREGIT ; then
 
-    echo -e "${GREEN}Get source from github${NC}"
-    echo -e "Getting devt framework from GitHub"
-    cd ../devt
-    rm -fr .git
-    rm -fr *
-    git init
-    git remote add devt https://github.com/tim-hogan/devt.git
-    git pull devt $BRANCH
-    cd -
+	echo -e "${GREEN}Get source from github${NC}"
+	echo -e "Getting devt framework from GitHub"
+	cd ../devt
+	rm -fr .git
+	rm -fr *
+	git init
+	git remote add devt https://github.com/tim-hogan/devt.git
+	git pull devt $BRANCH
+	cd -
 
-    echo -e "Getting satera from GitHub"
-    rm -fr .git
-    rm -fr *
-    git init
-    git remote add satera https://github.com/tim-hogan/statera.git
-    git pull satera $BRANCH
+	echo -e "Getting satera from GitHub"
+	rm -fr .git
+	rm -fr *
+	git init
+	git remote add satera https://github.com/tim-hogan/statera.git
+	git pull satera $BRANCH
 
-    . version
-    OLDVERSION=${VERSION}
-    VERSION=$((VERSION + 1))
+	. version
+	OLDVERSION=${VERSION}
+	VERSION=$((VERSION + 1))
 
-    echo -e "Write back to the version file with VERSION=${VERSION}"
-    echo "VERSION=${VERSION}" > version
-    echo -e "Cat of version follows"
-    cat version
+	echo -e "Write back to the version file with VERSION=${VERSION}"
+	echo "VERSION=${VERSION}" > version
+	echo -e "Cat of version follows"
+	cat version
 
-    chmod +x build.sh
+	chmod +x build.sh
 fi
 
 chmod +x src/install.sh
@@ -135,8 +135,8 @@ cd packagefiles
 emptyandcreate sql
 cp ../src/sql/statera.sql ./sql
 if [  -f "../src/sql/upgrade.sql" ] ; then
-    echo "Database upgrade files found"
-    cp ../src/sql/upgrade.sql ./sql    
+	echo "Database upgrade files found"
+	cp ../src/sql/upgrade.sql ./sql    
 fi
 
 #webfiles
@@ -148,6 +148,7 @@ cp ../src/ChangePassword.php                    ./webfiles
 cp ../src/EndofYear.php                         ./webfiles
 cp ../src/Expenses.php                          ./webfiles
 cp ../src/FinancialStatements.php               ./webfiles
+cp ../src/FinancialYearSelect.php               ./webfiles
 cp ../src/GSTReport.php                         ./webfiles
 cp ../src/index.php                             ./webfiles
 cp ../src/Invoice.php                           ./webfiles
@@ -228,16 +229,16 @@ mkdir -p package/current
 mkdir -p package/archive
 
 if [ -f "./package/current/install.zip" ] ; then
-    cp ./package/current/install.zip ./package/archive/install.v${OLDVERSION}.zip
+	cp ./package/current/install.zip ./package/archive/install.v${OLDVERSION}.zip
 fi
 cp install.zip ./package/current
 
 #Remote copy to devt host
 echo -e "${YELLOW}You will be asked for the deVT password as we are about to copy to the devt host${NC}"
 if ! $TEST ; then
-    echo -e "rename /var/www/html/static/statera/install.zip /var/www/html/static/statera/install-${DATE}.zip\n put install.zip /var/www/html/static/statera/install.zip" | sftp deVT@static.devt.nz
+	echo -e "rename /var/www/html/static/statera/install.zip /var/www/html/static/statera/install-${DATE}.zip\n put install.zip /var/www/html/static/statera/install.zip" | sftp deVT@static.devt.nz
 else
-    echo -e "put install.zip /var/www/html/static/statera/test/install.zip" | sftp deVT@static.devt.nz
+	echo -e "put install.zip /var/www/html/static/statera/test/install.zip" | sftp deVT@static.devt.nz
 
 fi
 
@@ -249,20 +250,20 @@ rm -r packagefiles
 # Git push
 #*****************************************************************************************
 if ! $INGNOREGIT && ! $TEST ; then
-    echo -e "Merging back to GitHub"
-    git checkout $BRANCH
-    echo -e "Adding new ./package/intall.zip"
-    git add package/current/install.zip
-    if [ -f "./package/archive/install.v${OLDVERSION}.zip" ] ; then
-        echo -e "Adding to archive ./package/archive/install.v${OLDVERSION}.zip"
-        git add package/archive/install.v${OLDVERSION}.zip
-    fi
-    echo -e "Adding new version"
-    git add version
-    echo -e "git Commit"
-    git commit -m "Version ${VERSION}"
-    echo -e "git Push"
-    git push covidpass $BRANCH
+	echo -e "Merging back to GitHub"
+	git checkout $BRANCH
+	echo -e "Adding new ./package/intall.zip"
+	git add package/current/install.zip
+	if [ -f "./package/archive/install.v${OLDVERSION}.zip" ] ; then
+		echo -e "Adding to archive ./package/archive/install.v${OLDVERSION}.zip"
+		git add package/archive/install.v${OLDVERSION}.zip
+	fi
+	echo -e "Adding new version"
+	git add version
+	echo -e "git Commit"
+	git commit -m "Version ${VERSION}"
+	echo -e "git Push"
+	git push covidpass $BRANCH
 fi
 
 chmod +x build.sh
