@@ -70,6 +70,7 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 					<h2>TRANSACTIONS</h2>
 					<div class="linkscontainer">
 						<div class="link" href="NewLoan.php" onclick="sel(this)">NEW LOAN</div>
+                        <div class="link" href="LoanTransaction.php" onclick="sel(this)">UPDATE LOAN</div>
 					</div>
 				</div>
 				<div class="links">

@@ -219,6 +219,63 @@ class product extends TableRow
 	}
 }
 
+class quote extends TableRow
+{
+	function __construct($tabledata = null)
+	{
+		if ($tabledata)
+			parent::__construct($tabledata);
+		else
+			parent::__construct
+			(
+				[
+					"idquote" => ["type" => "int"],
+					"quote_deleted" => ["type" => "boolean"],
+					"quote_date" => ["type" => "date"],
+					"quote_contact_phone" => ["type" => "varchar"],
+					"quote_contact_email" => ["type" => "varchar"],
+					"quote_status" => ["type" => "varchar"],
+					"quote_accept_date" => ["type" => "date"],
+					"quote_value_net" => ["type" => "decimal"],
+					"quote_value_tax" => ["type" => "decimal"],
+					"quote_value_gross" => ["type" => "decimal"],
+					"quote_text_line1" => ["type" => "varchar"],
+					"quote_text_line2" => ["type" => "varchar"],
+					"quote_text_line3" => ["type" => "varchar"],
+					"quote_text_line4" => ["type" => "varchar"]
+				]
+			);
+	}
+
+}
+
+class quote_request extends TableRow
+{
+	function __construct($tabledata = null)
+	{
+		if ($tabledata)
+			parent::__construct($tabledata);
+		else
+			parent::__construct
+			(
+				[
+					"idquote_request" => ["type" => "int"],
+					"quote_request_deleted" => ["type" => "boolean"],
+					"quote_request_date" => ["type" => "date"],
+					"quote_request_phone" => ["type" => "varchar"],
+					"quote_request_email" => ["type" => "varchar"],
+					"quote_request_addreess1" => ["type" => "varchar"],
+					"quote_request_addreess2" => ["type" => "varchar"],
+					"quote_request_addreess3" => ["type" => "varchar"],
+					"quote_request_addreess4" => ["type" => "varchar"],
+					"quote_request_addreess5" => ["type" => "varchar"],
+					"quote_request_comment" => ["type" => "varchar"],
+				]
+			);
+	}
+
+}
+
 class account extends TableRow
 {
 	function __construct($tabledata=null)
@@ -340,6 +397,7 @@ class journal extends TableRow
 					"journal_source"=>["type" => "int"],
 					"journal_source_chart"=>["type" => "int"],
 					"journal_folio"=>["type" => "int"],
+					"journal_quote"=>["type" => "int"],
 					"journal_account"=>["type" => "int"],
 					"journal_invoice"=>["type" => "int"],
 					"journal_asset"=>["type"  => "int"],
@@ -752,6 +810,15 @@ class stateraDB extends SQLPlus
 	public function everyChartExpenseAndAsset()
 	{
 		$r = $this->p_query("select * from chart left join taxclass on idtaxclass = chart_taxclass where chart_type = 'expense' or chart_type = 'asset' order by chart_description",null,null);
+		if (!$r) {$this->sqlError($q); return null;}
+		if ($r->num_rows > 0)
+			return $r->fetch_all(MYSQLI_ASSOC);
+		return null;
+	}
+
+	public function everyChartLoan()
+	{
+		$r = $this->p_query("select * from chart where chart_type = 'non current liability' and chart_subtype = 'loan' order by chart_code",null,null);
 		if (!$r) {$this->sqlError($q); return null;}
 		if ($r->num_rows > 0)
 			return $r->fetch_all(MYSQLI_ASSOC);
@@ -1263,8 +1330,8 @@ class stateraDB extends SQLPlus
 			$chart1 = $c->chart_code;
 		}
 		if (!$chart2) {
-			$c = $this->getChartFor('expense',null,null,SEARCH_FIRST);
-			if (! $c)
+			$c = $this->getChartFor('expense',null, null, SEARCH_FIRST);
+			if (!$c)
 				throw (new Exception("Unable to find chart for current income/sale"));
 			$chart2 = $c->chart_code;
 		}
@@ -1297,20 +1364,69 @@ class stateraDB extends SQLPlus
 		$this->p_create_from_array("chart",$chart);
 
 		//Create Journal record
-		$coa1 = $this->getChartFor('cash',null,null,SEARCH_FIRST);
+		$coa1 = ($this->getChartFor('cash',null,null,SEARCH_FIRST))->chart_code;
 
 		$rec = array();
-		$rec['journal_date'] = $formfields["date"];
+		$rec['journal_date'] = $date;
 		$rec['journal_description'] = $description;
 		$rec['journal_net'] = $amount;
 		$rec['journal_tax'] = 0.00;
 		$rec['journal_gross'] = $amount;
+		$rec['journal_folio'] = ($this->getLastFolio() + 1);
 
 		$xtn = $this->createPair($rec,$coa1,$coa2,0,false);
 		if (!$xtn)
 			$this->TransactionError();
 
 		return $this->EndTransaction();
+	}
+
+	public function LoanCrPrinciple($date,$coa2,$amount,$decription)
+	{
+		$coa1 = ($this->getChartFor('cash', null, null, SEARCH_FIRST))->chart_code;
+
+		$rec = array();
+		$rec['journal_date'] = $date;
+		$rec['journal_description'] = $description;
+		$rec['journal_net'] = -($amount);
+		$rec['journal_tax'] = 0.00;
+		$rec['journal_gross'] = -($amount);
+		$rec['journal_folio'] = ($this->getLastFolio() + 1);
+
+		$this->BeginTransaction();
+
+		$xtn = $this->createPair($rec, $coa1, $coa2, 0, false);
+		if (!$xtn)
+			$this->TransactionError();
+
+		$this->EndTransaction();
+
+		return $xtn;
+
+	}
+
+	public function LoanDrPrinciple($date, $coa2, $amount, $decription)
+	{
+		$coa1 = ($this->getChartFor('cash', null, null, SEARCH_FIRST))->chart_code;
+
+		$rec = array();
+		$rec['journal_date'] = $date;
+		$rec['journal_description'] = $description;
+		$rec['journal_net'] = $amount;
+		$rec['journal_tax'] = 0.00;
+		$rec['journal_gross'] = $amount;
+		$rec['journal_folio'] = ($this->getLastFolio() + 1);
+
+		$this->BeginTransaction();
+
+		$xtn = $this->createPair($rec, $coa1, $coa2, 0, false);
+		if (!$xtn)
+			$this->TransactionError();
+
+		$this->EndTransaction();
+
+		return $xtn;
+
 	}
 
 	public function journalInvoiceOutstanding($invoiceid)

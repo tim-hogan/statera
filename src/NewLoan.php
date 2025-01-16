@@ -26,6 +26,14 @@ $errmsg="";
 if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
 
+
+	if (!$session->checkCSRF()) 
+	{
+		$DB->createAudit("security", "{$selff} [" . __LINE__ . "] Invalid CSRF on form input");
+		header("Location: SecurityError.php");
+		exit();
+	}
+
 	$decription = "Bank Loan";
 	$amnt = 0.0;
 
@@ -34,11 +42,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	else
 		$errmsg = "ERROR: No Date specified.";
 
-    if (isset($_POST["desc"]))
-        $formfields["desc"] = FormList::getField("desc");
+	if (isset($_POST["desc"]))
+		$formfields["desc"] = FormList::getField("desc");
 
 	if (isset($_POST["amnt"])) {
-        $amnt = FormList::getCurrencyField("amnt");
+		$amnt = FormList::getCurrencyField("amnt");
 		$formfields["amnt"] = sprintf("$%8.2f",$amnt);
 	}
 
@@ -47,6 +55,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		$rslt = $DB->newLoan($formfields["date"],$amnt,$formfields["desc"]);
 		if (!$rslt)
 			$errmsg = "ERROR: Database error occured";
+		else
+		{
+			header("Location: /");
+			exit();
+		}
 	}
 
 }
@@ -100,6 +113,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 						<input type="text" id="desc" name="desc" size="40" value="<?PHP echo $formfields["desc"];?>" />
 					</div>
 					<button>CREATE LOAN</button>
+					<input type="hidden" name="formtoken" value="<?php echo $session->csrf_key;?>" />
 				</form>
 			</div>
 		</div>
