@@ -38,7 +38,7 @@ $default_charts = [
 	["code" => 100,"type" => "cash","subtype" => "bank","typename" => "Cash","description" => "Current Account","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "asset","balance_sheet_desc_sub" => "current_asset"],
 	["code" => 200,"type" => "income","subtype" => "sale","typename" => "Income","description" => "Sales","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "revenue","balance_sheet_desc_sub" => ""],
 	["code" => 300,"type" => "current asset","subtype" => "accounts receivable","typename" => "Current Assets","description" => "Accounts Receivable","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "asset","balance_sheet_desc_sub" => "current_asset"],
-	["code" => 400,"type" => "current liability","subtype" => "accounts payable","typename" => "Current Liabilities","description" => "Accounts Payable","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "liability","balance_sheet_desc_sub" => ""],
+	["code" => 400,"type" => "current liability","subtype" => "accounts payable","typename" => "Current Liabilities","description" => "Accounts Payable","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "liability", "balance_sheet_desc_sub" => "current_liability"],
 	["code" => 500,"type" => "equity","subtype" => "shares","typename" => "Equity","description" => "Shares paid up","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "liability","balance_sheet_desc_sub" => ""],
 	["code" => 600,"type" => "asset","subtype" => "fixed_asset","typename" => "Asset","description" => "Fixed assets","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "asset","balance_sheet_desc_sub" => "fixed_asset"],
 	["code" => 700,"type" => "liability","subtype" => "shareholders","typename" => "Liability","description" => "Shareholder current account","taxclass" => null,"desc_dr" => "","desc_cr" => "","balance_sheet_desc" => "liability","balance_sheet_desc_sub" => ""],
@@ -220,6 +220,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	$formfields["company_bank_acct_name"] = FormList::getField("company_bank_acct_name");
 	$formfields["company_bank_acct_number"] = FormList::getField("company_bank_acct_number");
 	$formfields["company_sales_tax_name"] = FormList::getField("company_sales_tax_name");
+	$formfields["company_financialyear_start_month"] = FormList::getIntegerField("company_financialyear_start_month");
 	$formfields["company_sales_tax_cadence"] = FormList::getIntegerField("company_sales_tax_cadence");
 	$formfields["company_sales_tax_first_month"] = FormList::getIntegerField("company_sales_tax_first_month");
 

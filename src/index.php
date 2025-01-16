@@ -67,6 +67,12 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 					</div>
 				</div>
 				<div class="links">
+					<h2>TRANSACTIONS</h2>
+					<div class="linkscontainer">
+						<div class="link" href="NewLoan.php" onclick="sel(this)">NEW LOAN</div>
+					</div>
+				</div>
+				<div class="links">
 					<h2>ACCOUNTS</h2>
 					<div class="linkscontainer">
 						<div class="link" href="AccountsPayable.php" onclick="sel(this)">ACCOUNTS PAYABLE</div>
@@ -74,7 +80,7 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 						<div class="link" href="BankAccounts.php" onclick="sel(this)">BANK ACCOUNTS</div>
 						<div class="link" href="GSTReport.php" onclick="sel(this)">GST REPORT</div>
 						<div class="link" href="EndofYear.php" onclick="sel(this)">END OF YEAR</div>
-						<div class="link" href="FinancialStatements.php" onclick="sel(this)">FINANCIAL STATEMENTS</div>
+						<div class="link" href="FinancialYearSelect.php" onclick="sel(this)">FINANCIAL STATEMENTS</div>
 						<div class="link" href="JournalDump.php" onclick="sel(this)">JOURNAL DUMP</div>
 					</div>
 				</div>
@@ -96,7 +102,7 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 						<div class="link" href="MaintSel.php?t=taxrate" onclick="sel(this)">TAX RATES</div>
 						<div class="link" href="MaintSel.php?t=chart" onclick="sel(this)">CHART OF ACCOUNTS</div>
 						<div class="link" href="MaintSel.php?t=shareholder" onclick="sel(this)">SHARE HOLDERS</div>
-                        <div class="link" href="ShareIssue.php" onclick="sel(this)">ISSUE SHARES</div>
+						<div class="link" href="ShareIssue.php" onclick="sel(this)">ISSUE SHARES</div>
 						<div class="link" href="MaintSel.php?t=staff" onclick="sel(this)">STAFF</div>
 					</div>
 				</div>

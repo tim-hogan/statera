@@ -62,7 +62,7 @@ class company extends TableRow
 					"company_bank_acct_number" =>["type" => "varchar"],
 					"company_sales_tax_name" =>["type" => "varchar"],
 					"company_sales_tax_cadence" =>["type" => "int"],
-					"company_sales_tax_first_month"=>["type" => "int"]
+					"company_sales_tax_first_month"=>["type" => "int"],
 					"company_financialyear_start_month"=>["type" => "int"]
 				]
 			);
@@ -758,6 +758,16 @@ class stateraDB extends SQLPlus
 		return null;
 	}
 
+	public function nextCOAAbove($n)
+	{
+		$next = $n + 1;
+
+		while ($rec = $this->p_singlequery("select * from chart where chart_code = ?", "i", $next) )
+			$next++;
+
+		return $next;
+	}
+
 	//*********************************************************************
 	// account functions
 	//*********************************************************************
@@ -1224,7 +1234,7 @@ class stateraDB extends SQLPlus
 		return $this->createPair($rec1,$chart1,$chart2,0,$enterTransaction);
 	}
 
-	public function expenseUnPaid($strdate,$description,$ledgerAmount,$vendname,$vendtax,$chart1=0,$chart2=0,$asset=null,$enterTransaction=true)
+	public function expenseUnPaid($strdate,$description,$ledgerAmount,$vendname,$vendtax,$chart1=0,$chart2=0,$asset=null,$enterTransaction = true)
 	{
 
 		//Get last folio
@@ -1246,15 +1256,13 @@ class stateraDB extends SQLPlus
 		$rec1['journal_vendor_tax_number'] = $vendtax;
 
 		//Now find coa
-		if (!$chart1)
-		{
-			$c = $this->getChartFor('current liability','accounts payable',null,SEARCH_FIRST);
-			if (! $c)
+		if (!$chart1) {
+			$c = $this->getChartFor('current liability', 'accounts payable', null, SEARCH_FIRST);
+			if (!$c)
 				throw (new Exception("Unable to find chart for current asset/accounts receivable"));
 			$chart1 = $c->chart_code;
 		}
-		if (!$chart2)
-		{
+		if (!$chart2) {
 			$c = $this->getChartFor('expense',null,null,SEARCH_FIRST);
 			if (! $c)
 				throw (new Exception("Unable to find chart for current income/sale"));
@@ -1263,6 +1271,46 @@ class stateraDB extends SQLPlus
 		$rec1["journal_source_chart"] = $chart2;
 
 		return $this->createPair($rec1,$chart1,$chart2,0,$enterTransaction);
+	}
+
+	public function newLoan($date,$amount,$description="Bank Loan")
+	{
+
+
+		//Find next available COA starting at 450
+		$coa2 = $this->nextCOAAbove(449);
+
+		$this->BeginTransaction();
+		//Create COA
+		$chart = array();
+		$chart["chart_code"] = $coa2;
+		$chart["chart_type"] = "non current liability";
+		$chart["chart_type_name"] = "Non Current Liabilities";
+		$chart["chart_subtype"] = "loan";
+		$chart["chart_description"] = $description;
+		$chart["chart_taxclass"] = null;
+		$chart["chart_description_dr"] = "";
+		$chart["chart_description_cr"] = "";
+		$chart["chart_balancesheet"] = "liability";
+		$chart["chart_balancesheet_subtype"] = "non_current_liability";
+
+		$this->p_create_from_array("chart",$chart);
+
+		//Create Journal record
+		$coa1 = $this->getChartFor('cash',null,null,SEARCH_FIRST);
+
+		$rec = array();
+		$rec['journal_date'] = $formfields["date"];
+		$rec['journal_description'] = $description;
+		$rec['journal_net'] = $amount;
+		$rec['journal_tax'] = 0.00;
+		$rec['journal_gross'] = $amount;
+
+		$xtn = $this->createPair($rec,$coa1,$coa2,0,false);
+		if (!$xtn)
+			$this->TransactionError();
+
+		return $this->EndTransaction();
 	}
 
 	public function journalInvoiceOutstanding($invoiceid)

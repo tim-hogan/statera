@@ -15,9 +15,10 @@ function var_error_log($object = null, $text = '')
 	ob_end_clean();
 	error_log("{$text} {$contents}");
 }
+$strerr = "";
 
 $company = $DB->getCompany();
-$startdate = new DateTime($company->start_date);
+$startdate = new DateTime($company->company_start_date);
 $startYear = intval($startdate->format("Y"));
 $month = sprintf("%02d", $company->company_financialyear_start_month);
 $d1 = new DateTime("2000-{$month}-01 00:00:00");
@@ -25,9 +26,18 @@ $d1 = $d1->sub(new DateInterval("P1M"));
 $accountDate = new AccountDate(intval($d1->format("m")));
 $fy = $accountDate->finacialYear($startdate);
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") 
+if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
-	var_error_log($_POST, "POST");
+
+	$session->startdate = $_POST["fy"];
+	$dt2 = new DateTime($_POST["fy"]);
+	$dt2->add(new DateInterval("P1Y"));
+	$dt2->sub(new DateInterval("P1D"));
+
+	$session->enddate = $dt2->format("Y-m-d 00:00:00");
+	
+	header("Location: FinancialStatements.php");
+	exit();
 }
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -40,6 +50,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	<link href="css/heading.css" rel="stylesheet" />
 	<link href="css/menu.css" rel="stylesheet" />
 	<link href="css/footer.css" rel="stylesheet" />
+	<style>
+		#main {margin: 10px; padding: 10px;}
+		h1 {color: #6b6ba7;font-family: Akshar;font-weight: 300;}
+		label {display: block;}
+		select {font-size: 12pt;}
+		button {margin-top: 20px;font-size: 12pt;}
+	</style>
 </head>
 <body>
 	<div id="container">
@@ -54,22 +71,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		}
 		?>
 		<div id="main">
+			<h1>FINANCIAL REPORTING</h1>
 			<div id="form">
 				<form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
-					<label for="fy">SELECT FINANCIAL YEAR</label>
-					<select id="fy" name="fy">
-						<?php
-						$start = new DateTime($fy[0]);
-						$end = new DateTime($fy[1]);
-						$today = new DateTime();
-						while (intval($start->format("Y")) < intval($today->format("Y")))
-						{
-							echo "<option value='{$start->format('Y-m-d')}'>{$start->format('j/n/Y')} - {$end->format('j/n/Y')}</option>";
-							$start->add(new DateInterval("P1Y"));
-							$end->add(new DateInterval("P1Y"));
-						}
-						?>
-					</select>
+					<div>
+						<label for="fy">SELECT FINANCIAL YEAR</label>
+						<select id="fy" name="fy">
+							<?php
+							$start = clone $fy[0];
+							$end = clone $fy[1];
+							$today = new DateTime();
+							$today_ts = $today->getTimestamp();
+							while (intval($start->format("Y")) < intval($today->format("Y")) + 1)
+							{
+								$selected = "";
+
+								if ($today_ts >= $start->getTimestamp() && $today_ts <= $end->getTimestamp())
+									$selected = "selected";
+								echo "<option value='{$start->format('Y-m-d')}' {$selected}>{$start->format('j/n/Y')} - {$end->format('j/n/Y')}</option>";
+								$start->add(new DateInterval("P1Y"));
+								$end->add(new DateInterval("P1Y"));
+							}
+							?>
+						</select>
+					</div>
 					<button>REPORT</button>
 				</form>
 			</div>

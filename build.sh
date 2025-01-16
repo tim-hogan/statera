@@ -156,6 +156,7 @@ cp ../src/Invoices.php                          ./webfiles
 cp ../src/JournalDump.php                       ./webfiles
 cp ../src/Maint.php                             ./webfiles
 cp ../src/MaintSel.php                          ./webfiles
+cp ../src/NewLoan.php                           ./webfiles
 cp ../src/PayTax.php                            ./webfiles
 cp ../src/Sale.php                              ./webfiles
 cp ../src/ShareIssue.php                        ./webfiles
