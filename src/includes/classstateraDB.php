@@ -229,9 +229,11 @@ class quote extends TableRow
 			parent::__construct
 			(
 				[
-					"idquote" => ["type" => "int"],
+					"idquote" => ["type" => "int", "fk" => true],
 					"quote_deleted" => ["type" => "boolean"],
+					"quote_number" => ["type" => "int"],
 					"quote_date" => ["type" => "date"],
+					"quote_contact_name" => ["type" => "varchar"],
 					"quote_contact_phone" => ["type" => "varchar"],
 					"quote_contact_email" => ["type" => "varchar"],
 					"quote_status" => ["type" => "varchar"],
@@ -239,10 +241,11 @@ class quote extends TableRow
 					"quote_value_net" => ["type" => "decimal"],
 					"quote_value_tax" => ["type" => "decimal"],
 					"quote_value_gross" => ["type" => "decimal"],
-					"quote_text_line1" => ["type" => "varchar"],
-					"quote_text_line2" => ["type" => "varchar"],
-					"quote_text_line3" => ["type" => "varchar"],
-					"quote_text_line4" => ["type" => "varchar"]
+					"quote_address1" => ["type" => "varchar"],
+					"quote_address2" => ["type" => "varchar"],
+					"quote_address3" => ["type" => "varchar"],
+					"quote_address4" => ["type" => "varchar"],
+					"quote_address5" => ["type" => "varchar"]
 				]
 			);
 	}
@@ -1374,14 +1377,14 @@ class stateraDB extends SQLPlus
 		$rec['journal_gross'] = $amount;
 		$rec['journal_folio'] = ($this->getLastFolio() + 1);
 
-		$xtn = $this->createPair($rec,$coa1,$coa2,0,false);
+		$xtn = $this->createPair($rec, $coa1, $coa2, 0, false);
 		if (!$xtn)
 			$this->TransactionError();
 
 		return $this->EndTransaction();
 	}
 
-	public function LoanCrPrinciple($date,$coa2,$amount,$decription)
+	public function LoanCrPrinciple($date, $coa2, $amount, $decription)
 	{
 		$coa1 = ($this->getChartFor('cash', null, null, SEARCH_FIRST))->chart_code;
 
@@ -1408,6 +1411,30 @@ class stateraDB extends SQLPlus
 	public function LoanDrPrinciple($date, $coa2, $amount, $decription)
 	{
 		$coa1 = ($this->getChartFor('cash', null, null, SEARCH_FIRST))->chart_code;
+
+		$rec = array();
+		$rec['journal_date'] = $date;
+		$rec['journal_description'] = $description;
+		$rec['journal_net'] = $amount;
+		$rec['journal_tax'] = 0.00;
+		$rec['journal_gross'] = $amount;
+		$rec['journal_folio'] = ($this->getLastFolio() + 1);
+
+		$this->BeginTransaction();
+
+		$xtn = $this->createPair($rec, $coa1, $coa2, 0, false);
+		if (!$xtn)
+			$this->TransactionError();
+
+		$this->EndTransaction();
+
+		return $xtn;
+
+	}
+
+	public function LoanInterest($date, $coa2, $amount, $decription)
+	{
+		$coa1 = ($this->getChartFor('expense', "financial", "interest", SEARCH_ONEONLY))->chart_code;
 
 		$rec = array();
 		$rec['journal_date'] = $date;
@@ -2013,7 +2040,7 @@ class stateraDB extends SQLPlus
 			$idx = $j['journal_shareholder'];
 			$shareholder_current[$idx] = array();
 			$name = strtoupper($j['shareholder_lastname']) . ", " . $j['shareholder_firstnames'];
-			$name = trim($name,",");
+			$name = trim($name, ",");
 			$name = trim($name);
 			$shareholder_current[$idx] ['name'] = $name;
 			$shareholder_current[$idx] ['amt'] = $j['GROSS'];
@@ -2070,6 +2097,36 @@ class stateraDB extends SQLPlus
 		if ($r->num_rows > 0)
 			return $r->fetch_all(MYSQLI_ASSOC);
 		return null;
+	}
+
+	//*********************************************************************
+	//quote functions
+	//*********************************************************************
+	public function o_getQuoteById($id)
+	{
+		return $this->o_singlequery("quote", "select * from quote where idquote = ?", "i", $id);
+	}
+
+	public function o_getQuoteByNum($quote_number)
+	{
+		return $this->o_singlequery("quote", "select * from quote where quote_number = ?", "i", $quote_number);
+	}
+
+	public function getNextQuoteNumber()
+	{
+		$r = $this->p_query("select * from quote order by quote_number desc limit 1", null, null);
+		if ($r && $r->num_rows > 0)
+		{
+			$a = $r->fetch_array();
+			return intval($a["quote_number"]) + 1;
+		}
+		return 1;
+	}
+
+	public function createNewQuote($num)
+	{
+		$this->p_create("insert into quote (quote_number) values (?)", "i", $num);
+		return $this->o_getQuoteById($this->insert_id);
 	}
 
 	//*********************************************************************

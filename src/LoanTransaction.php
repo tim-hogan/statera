@@ -96,6 +96,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 			$undolist->push($undo);
 			$DB->updateUndoList($user->iduser, $undolist->toJSON());
 		}
+		if ($interest > 0)
+		{
+			if (strlen($formfields["desc"]) == 0)
+				$formfields["desc"] = "Interest accrued";
+			$xtn = $DB->LoanInterest($formfields["date"], $coa, $interest, $formfields["desc"]);
+			$undo->add(new UndoAction("delete", "journal", "journal_xtn", $xtn));
+			$undolist->push($undo);
+			$DB->updateUndoList($user->iduser, $undolist->toJSON());           
+		}
 	}
 
 }
