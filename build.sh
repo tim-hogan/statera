@@ -212,6 +212,13 @@ cp ../src/config/StateraForm.php                ./webfiles/config
 emptyandcreate webfiles/docs
 cp ../src/docs/IR265.pdf                        ./webfiles/docs
 
+#copy images
+emptyandcreate webfiles/images					
+
+emptyandcreate webfiles/images/precisetrees				
+cp ../src/images/precisetrees/Logo1-Transparent.png  ./webfiles/images/precisetrees
+
+
 tar -zcf ../install/statera.tar.gz .
 
 cd ..

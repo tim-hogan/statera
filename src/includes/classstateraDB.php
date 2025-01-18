@@ -229,7 +229,7 @@ class quote extends TableRow
 			parent::__construct
 			(
 				[
-					"idquote" => ["type" => "int", "fk" => true],
+					"idquote" => ["type" => "int", "pk" => true],
 					"quote_deleted" => ["type" => "boolean"],
 					"quote_number" => ["type" => "int"],
 					"quote_date" => ["type" => "date"],
@@ -246,6 +246,28 @@ class quote extends TableRow
 					"quote_address3" => ["type" => "varchar"],
 					"quote_address4" => ["type" => "varchar"],
 					"quote_address5" => ["type" => "varchar"]
+				]
+			);
+	}
+
+}
+
+class quote_line extends TableRow
+{
+	function __construct($tabledata = null)
+	{
+		if ($tabledata)
+			parent::__construct($tabledata);
+		else
+			parent::__construct
+			(
+				[
+					"idquote_line" => ["type" => "int", "pk" => true;],
+					"quote_line_quote" => ["type" => "int"],
+					"quote_line_item" => ["type" => "int"],
+					"quote_line_descripton" => ["type" => "varchar"],
+					"quote_line_qty" => ["type" => "decimal"],
+					"quote_line_cost" => ["type" => "decimal"]
 				]
 			);
 	}
