@@ -464,10 +464,23 @@ class journal extends TableRow
 					"journal_account"=>["type" => "int"],
 					"journal_invoice"=>["type" => "int"],
 					"journal_asset"=>["type"  => "int"],
+					"journal_attachment_group" => ["type" => "int"],
 					"journal_tax_date"=>["type" => "date"],
 					"journal_shareholder"=>["type" => "int"],
 					"journal_vendor_name"=>["type" => "varchar"],
-					"journal_vendor_tax_number"=>["type" => "varchar"]
+					"journal_vendor_tax_number"=>["type" => "varchar"],
+					"chart_code" =>["type" => "int"],
+					"chart_deleted" =>["type" => "boolean"],
+					"chart_type" =>["type" => "varchar"],
+					"chart_type_name" =>["type" => "varchar"],
+					"chart_subtype"=>["type" => "varchar"],
+					"chart_subsubtype"=>["type" => "varchar"],
+					"chart_description"=>["type" => "varchar"],
+					"chart_taxclass"=>["type" => "int"],
+					"chart_description_cr"=>["type" => "varchar"],
+					"chart_description_dr"=>["type" => "varchar"],
+					"chart_balancesheet"=>["type" => "varchar"],
+					"chart_balancesheet_subtype"=>["type" => "varchar"]
 				]
 			);
 	}
@@ -795,7 +808,7 @@ class stateraDB extends SQLPlus
 
 	public function createAttachmentGroup($type,$description)
 	{
-		if ($this->p_create("insert into attachment_group (attachment_group_type,attachment_group_description) values (?,?)", "ss", type, $description))
+		if ($this->p_create("insert into attachment_group (attachment_group_type,attachment_group_description) values (?,?)", "ss", $type, $description))
 		{
 			return $this->o_getAttachmentGroup($this->insert_id);
 		}
@@ -863,11 +876,10 @@ class stateraDB extends SQLPlus
 				$r = $this->p_query("select * from chart where chart_type = ? and chart_subtype = ? order by chart_code","ss",$type,$subtype);
 		}
 		else
-			$r = $this->p_query("select * from chart where chart_type = ? order by chart_code","s",$type);
+			$r = $this->p_query("select * from chart where chart_type = ? order by chart_code", "s", $type);
 
-		if ($r->num_rows > 0)
-		{
-			if (($options & SEARCH_ONEONLY) &&  $r->num_rows > 1)
+		if ($r->num_rows > 0) {
+			if (($options & SEARCH_ONEONLY) && $r->num_rows > 1)
 				return null;
 			return $r->fetch_object("chart");
 		}
@@ -1345,7 +1357,7 @@ class stateraDB extends SQLPlus
 
 	}
 
-	public function expensePaid($strdate,$description,$ledgerAmount,$vendname,$vendtax,$chart1=0,$chart2=0,$asset=null,$enterTransaction=true)
+	public function expensePaid($strdate,$description,$ledgerAmount,$vendname,$vendtax,$chart1=0,$chart2=0,$asset=null,$attachment_group=null,$enterTransaction=true)
 	{
 
 		//Get last folio
@@ -1363,6 +1375,7 @@ class stateraDB extends SQLPlus
 		$rec1['journal_gross'] = -($ledgerAmount->gross);
 
 		$rec1['journal_folio'] = $folio;
+		$rec1['journal_attachment_group'] = $attachment_group;
 		$rec1['journal_vendor_name'] = $vendname;
 		$rec1['journal_vendor_tax_number'] = $vendtax;
 
@@ -1386,7 +1399,7 @@ class stateraDB extends SQLPlus
 		return $this->createPair($rec1,$chart1,$chart2,0,$enterTransaction);
 	}
 
-	public function expenseUnPaid($strdate,$description,$ledgerAmount,$vendname,$vendtax,$chart1=0,$chart2=0,$asset=null,$enterTransaction = true)
+	public function expenseUnPaid($strdate,$description,$ledgerAmount,$vendname,$vendtax,$chart1=0,$chart2=0,$asset=null, $attachment_group = null,$enterTransaction = true)
 	{
 
 		//Get last folio
@@ -1404,6 +1417,7 @@ class stateraDB extends SQLPlus
 		$rec1['journal_gross'] = -($ledgerAmount->gross);
 
 		$rec1['journal_folio'] = $folio;
+		$rec1['journal_attachment_group'] = $attachment_group;
 		$rec1['journal_vendor_name'] = $vendname;
 		$rec1['journal_vendor_tax_number'] = $vendtax;
 
@@ -1836,6 +1850,18 @@ class stateraDB extends SQLPlus
 		return null;
 	}
 
+	public function o_everyJournalExpense()
+	{
+		$ret = array();
+		$r = $this->p_query("select * from journal left join chart on chart_code = journal_chart where chart_type = 'expense' order by journal_date desc", null, null);
+		if ($r)
+		{
+			while ($a = $r->fetch_object("journal"))
+				$ret[] = $a;
+		}
+		return $ret;
+	}
+
 	public function getSalesTaxPaid($strDate)
 	{
 		$company = $this->getCompany();
@@ -2111,6 +2137,20 @@ class stateraDB extends SQLPlus
 		$current_liabilities[10000] ["amt"] = -$stax;
 
 		$liabilities["current_liabilities"] = $current_liabilities;
+
+		$non_current_liabilities = array();
+		$r = $this->p_query("select chart_code, chart_type, chart_description, sum(journal_net) as NET , sum(journal_gross) as GROSS from journal left join chart on chart_code = journal_chart where chart_balancesheet = 'liability' and chart_balancesheet_subtype = 'non_current_liability' and journal_date <= ? group by chart_code,chart_type,chart_description order by chart_description", "s", $to);
+		while ($j = $r->fetch_assoc())
+		{
+			$non_current_liabilities[$j["chart_code"]] = array();
+			$non_current_liabilities[$j["chart_code"]] ["name"] = $j["chart_description"];
+			if ($j["chart_type"] == "cash")
+				$non_current_liabilities[$j["chart_code"]] ["amt"] = $j["GROSS"];
+			else
+				$non_current_liabilities[$j["chart_code"]] ["amt"] = $j["NET"];
+		}
+
+		$liabilities["non_current_liabilities"] = $non_current_liabilities;
 
 
 		//shareholder current accounts

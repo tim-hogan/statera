@@ -90,6 +90,7 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 					<div class="linkscontainer">
 						<div class="link" href="MaintSel.php?t=account" onclick="sel(this)">CUSTOMERS</div>
 						<div class="link" href="Invoices.php" onclick="sel(this)">INVOICES</div>
+                        <div class="link" href="ViewExpenses.php" onclick="sel(this)">VIEW EXPENSES</div>
 						<div class="link" href="ShareIssue.php" onclick="sel(this)">ISSUE SHARES</div>
 						<div class="link" href="PayTax.php" onclick="sel(this)">PAY TAX</div>
 					</div>

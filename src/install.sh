@@ -184,7 +184,7 @@ if $INSTALLFILES ; then
 
     chown -R www-data:www-data $WEBDIR
     
-    chmod 664 $WEBDIR/attachments
+    chmod 775 $WEBDIR/attachments
 
     echo " Web files copied"
 

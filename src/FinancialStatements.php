@@ -207,7 +207,7 @@ $balance_sheet = $DB->financialreport($session->startdate, $session->enddate);
 						echo "<tr><td></td><td></td><td class='td1'>{$desc}</td><td class='r'>{$v}</td></tr>";
 						$sumE -= $d["net"];
 					}
-					$v = LedgerAmount::format1($sumE);
+					$v = LedgerAmount::format1($ebitda-$sumE);
 					echo "<tr><td></td><td></td><td>Net Profit</td><td></td><td></td><td class='r tot1'>{$v}</td></tr>";
 
 					$retained_funds = $ebitda - $sumE;
@@ -303,6 +303,31 @@ $balance_sheet = $DB->financialreport($session->startdate, $session->enddate);
 
 
 					echo "<tr><td></td><td></td><td>Total Current Liabilities</td><td></td><td class='r tot1'>{$v}</td></tr>";
+
+					?>
+					<tr>
+						<td></td><td class="h2" colspan="5">NON CURRENT LIABILITIES</td>
+					</tr>
+
+					<?php
+					$total_non_current_liabilities = 0;
+					$sumncl = 0;
+					$non_current_liabilities = $balance_sheet["liabilities"] ["non_current_liabilities"];
+					foreach ($non_current_liabilities as $d)
+					{
+						$v = LedgerAmount::format1(-$d["amt"]);
+						$desc = htmlspecialchars($d["name"]);
+						echo "<tr><td></td><td></td><td class='td1'>{$desc}</td><td class='r'>{$v}</td></tr>";
+						$sumncl -= $d["amt"];
+					}
+
+					$total_non_current_liabilities =+ $sumncl;
+
+					$total_liabilities += $sumncl;
+
+					$v = LedgerAmount::format1($total_non_current_liabilities);
+					echo "<tr><td></td><td></td><td>Total Non Current Liabilities</td><td></td><td class='r tot1'>{$v}</td></tr>";
+
 					?>
 					<tr>
 						<td class='blank1' colspan='6'></td>

@@ -95,45 +95,53 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	}
 	else
 		$errmsg = "Invalid Expense Category";
+	
+	$file_err = false;
 
 	//Now check the files
-	if (array_key_exists('files',$_FILES) )
+	if (array_key_exists('files', $_FILES)) 
 	{
 		$file_count = count($_FILES["files"]["error"]);
-		for ($idx = 0; $idx < $file_count;$idx++)
+		if ($file_count == 1 && $_FILES["files"]["error"][0] == UPLOAD_ERR_NO_FILE)
+			$file_count = 0;
+		
+		if ($file_count > 0) 
 		{
-			if ($_FILES["files"]["error"][$idx] != UPLOAD_ERR_OK)
-				$file_err = true;
-		}
-
-		if (!$file_err)
-		{
-			$target_dir = dirname(__FILE__) . "/attachments";
-			for ($idx = 0; $idx < $file_count;$idx++)
-			{
-				$dtNow = new DateTime();
-				$name = basename($_FILES["files"]["name"] ["idx"]);
-				$pos = strpos($name,".");
-				$suffix = '';
-				if ($pos !== false)
-				{
-					$suffix = substr($name,$pos,(strlen($name) - $pos));
-				}
-				//Create a random ID
-				$nameid = md5($name . $dtNow->format('Y-m-d H:i:s')) . $suffix;
-							
-				move_uploaded_file($_FILES["files"]["tmp_name"] [$idx], $target_dir . $nameid );
-				if (!isset($_FILES["files"] ["newname"]))
-					$_FILES["files"] ["newname"] = array();
-				$_FILES["files"] ["newname"] [$idx] = $nameid;
-
+			for ($idx = 0; $idx < $file_count; $idx++) {
+				if ($_FILES["files"]["error"][$idx] != UPLOAD_ERR_OK)
+					$file_err = true;
 			}
 		}
+
+		if (!$file_err) 
+		{
+
+			if ($file_count > 0) 
+			{
+				$target_dir = dirname(__FILE__) . "/attachments/";
+
+				for ($idx = 0; $idx < $file_count; $idx++) {
+					$dtNow = new DateTime();
+					$name = basename($_FILES["files"]["name"][$idx]);
+					$pos = strpos($name, ".");
+					$suffix = '';
+					if ($pos !== false) {
+						$suffix = substr($name, $pos, (strlen($name) - $pos));
+					}
+					//Create a random ID
+					$nameid = md5($name . $dtNow->format('Y-m-d H:i:s')) . $suffix;
+
+					move_uploaded_file($_FILES["files"]["tmp_name"][$idx], $target_dir . $nameid);
+					if (!isset($_FILES["files"]["newname"]))
+						$_FILES["files"]["newname"] = array();
+					$_FILES["files"]["newname"][$idx] = $nameid;
+
+				}
+			}
+		} 
 		else
 			$errmsg = "Upload error of attachments";
-
-	$errmsg = "Upload error of attachments";
-
+	}
 
 	if (strlen($errmsg) == 0)
 	{
@@ -158,12 +166,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		$DB->BeginTransaction();
 
 		//Create attachments
+		$attach_group_id = null;
 		if ($file_count > 0)
 		{
 			$o_attachGroup = $DB->createAttachmentGroup("expense","");
+			$attach_group_id = $o_attachGroup->idattachment_group;
 			for ($idx = 0; $idx < $file_count;$idx++)
 			{
-				$DB->addAttachment($o_attachGroup->idattachment_group,$_FILES["files"] ["newname"] [$idx]);
+				$DB->addAttachment($attach_group_id,$_FILES["files"] ["newname"] [$idx]);
 			}
 		}
 		
@@ -175,9 +185,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		
 		
 		if (isset($_POST["paid"]))
-			$xtn = $DB->expensePaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid,false);
+			$xtn = $DB->expensePaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid, $attach_group_id,false);
 		else
-			$xtn = $DB->expenseUnPaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid,false);
+			$xtn = $DB->expenseUnPaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid, $attach_group_id,false);
 			
 		if ($DB->EndTransaction())
 		{

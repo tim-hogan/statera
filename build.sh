@@ -165,6 +165,7 @@ cp ../src/ShareIssue.php                        ./webfiles
 cp ../src/Signin.php                            ./webfiles
 cp ../src/Signout.php                           ./webfiles
 cp ../src/UndoLast.php                          ./webfiles
+cp ../src/ViewExpenses.php                      ./webfiles
 cp ../src/Wizard.php                            ./webfiles
 
 emptyandcreate webfiles/includes
