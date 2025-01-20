@@ -1276,6 +1276,26 @@ class stateraDB extends SQLPlus
 		return $xtn;
 	}
 
+	public function getJournalPair($id)
+	{
+		$a = array();
+		$a[0] = $this->o_singlequery("journal", "select * from journal left join chart on chart_code = journal_chart where idjournal = ?", "i", $id);
+		if ($a[0[])
+			$a[1] = $this->o_singlequery("journal", "select * from journal left join chart on chart_code = journal_chart where idjournal = ?", "i", $a[0]->journal_link);
+		return $a;
+	}
+
+	public function hasExpensBeenPaid($id)
+	{
+		$pair = $this->getJournalPair($id);
+		if (count($pair) == 2)
+		{
+			if ($pair[1]->chart_type->raw() == 'cash')
+				return true;
+		}
+		return false;
+	}
+
 	public function saleCash($strdate,$description,$account_num,$invoice_num,$ledgerAmount,$chart1=0,$chart2=0,$enterTransaction=true)
 	{
 		//Get last folio
