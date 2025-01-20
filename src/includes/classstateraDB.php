@@ -35,6 +35,44 @@ class glb extends TableRow
 
 }
 
+class attachment extends TableRow
+{
+	function __construct($tabledata = null)
+	{
+		if ($tabledata)
+			parent::__construct($tabledata);
+		else
+			parent::__construct
+			(
+				[
+					"idattachment" => ["type" => "int" , "pk"=> true],
+					"attachment_deleted" => ["type" => "boolean"],
+					"attachment_group" => ["type" => "int"],
+					"attachment_filename" => ["type" => "varchar"]
+				]
+			);
+	}
+}
+
+class attachment_group extends TableRow
+{
+	function __construct($tabledata = null)
+	{
+		if ($tabledata)
+			parent::__construct($tabledata);
+		else
+			parent::__construct
+			(
+				[
+					"idattachment_group" => ["type" => "int", "pk" => true],
+					"attachment_group_timestamp" => ["type" => "datetime"],
+					"attachment_group_type" => ["type" => "varchar"],
+					"attachment_group_description" => ["type" => "varchar"]
+				]
+			);
+	}
+}
+
 class company extends TableRow
 {
 	function __construct($tabledata=null)
@@ -262,7 +300,7 @@ class quote_line extends TableRow
 			parent::__construct
 			(
 				[
-					"idquote_line" => ["type" => "int", "pk" => true;],
+					"idquote_line" => ["type" => "int", "pk" => true],
 					"quote_line_quote" => ["type" => "int"],
 					"quote_line_item" => ["type" => "int"],
 					"quote_line_descripton" => ["type" => "varchar"],
@@ -745,6 +783,28 @@ class stateraDB extends SQLPlus
 	public function allAssetJournals()
 	{
 		$r = $this->p_query("select * from asset left join journal on journal_asset = idasset left join chart on idchart = journal_chart where chart_type = 'asset' and chart_subtype = 'fixed_asset'",null,null);
+	}
+
+	//*********************************************************************
+	// attachment functions
+	//*********************************************************************
+	public function o_getAttachmentGroup($id)
+	{
+		return $this->o_singlequery("attachment_group", "select * from attachment_group where idattachment_group = ?", "i", $id);
+	}
+
+	public function createAttachmentGroup($type,$description)
+	{
+		if ($this->p_create("insert into attachment_group (attachment_group_type,attachment_group_description) values (?,?)", "ss", type, $description))
+		{
+			return $this->o_getAttachmentGroup($this->insert_id);
+		}
+		return null;
+	}
+
+	public function addAttachment($groupid,$filename)
+	{
+		return $this->p_create("insert into attachment (attachment_group,attachment_filename) values (?,?)", "is", $groupid, $filename);
 	}
 
 	//*********************************************************************
@@ -1406,7 +1466,7 @@ class stateraDB extends SQLPlus
 		return $this->EndTransaction();
 	}
 
-	public function LoanCrPrinciple($date, $coa2, $amount, $decription)
+	public function LoanCrPrinciple($date, $coa2, $amount, $description)
 	{
 		$coa1 = ($this->getChartFor('cash', null, null, SEARCH_FIRST))->chart_code;
 
@@ -1430,7 +1490,7 @@ class stateraDB extends SQLPlus
 
 	}
 
-	public function LoanDrPrinciple($date, $coa2, $amount, $decription)
+	public function LoanDrPrinciple($date, $coa2, $amount, $description)
 	{
 		$coa1 = ($this->getChartFor('cash', null, null, SEARCH_FIRST))->chart_code;
 
@@ -1454,7 +1514,7 @@ class stateraDB extends SQLPlus
 
 	}
 
-	public function LoanInterest($date, $coa2, $amount, $decription)
+	public function LoanInterest($date, $coa2, $amount, $description)
 	{
 		$coa1 = ($this->getChartFor('expense', "financial", "interest", SEARCH_ONEONLY))->chart_code;
 

@@ -43,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 	if (isset($_POST["coa"]))
 	{
-		$coa = FormList::getInteger("coa");
+		$coa = FormList::getIntegerField("coa");
 		if ($coa == 0)
 			$errmsg = "ERROR: No loan account selected";
 	}
@@ -67,16 +67,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	}
 
 	
-	$formfields["desc"] = FormList::getField("interest");
+	$formfields["desc"] = FormList::getField("desc");
 	
 
 	//Check that we have one of cr dr or interest
 	$sum = $cr + $dr + $interest;
-	if ($cr != 0 && $cr != $sum) 
+	if ($cr != 0 && $cr != $sum)
+		$errmsg = "ERROR: You msut ony select one of CREDIT LOAN DEBIT LOAN OR INTEREST";
+	if ($dr != 0 && $dr != $sum)
+		$errmsg = "ERROR: You msut ony select one of CREDIT LOAN DEBIT LOAN OR INTEREST";
+	if ($interest != 0 && $interest != $sum)
+		$errmsg = "ERROR: You msut ony select one of CREDIT LOAN DEBIT LOAN OR INTEREST";
+
 
 	//Check that we have
 	if (strlen($errmsg) == 0)
 	{
+		error_log("CR {$cr} DR {$cr} INTEREST {$interest}");
 		$undo = new Undo("Loan transaction");
 		if ($cr > 0) 
 		{
@@ -92,6 +99,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 			if (strlen($formfields["desc"]) == 0)
 				$formfields["desc"] = "Loan extended";
 			$xtn = $DB->LoanDrPrinciple($formfields["date"], $coa, $dr, $formfields["desc"]);
+			var_error_log($xtn, "xtn");
+			
+			
 			$undo->add(new UndoAction("delete", "journal", "journal_xtn", $xtn));
 			$undolist->push($undo);
 			$DB->updateUndoList($user->iduser, $undolist->toJSON());

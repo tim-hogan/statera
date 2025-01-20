@@ -179,8 +179,17 @@ if $INSTALLFILES ; then
     echo "Copying Web files"
     mkdir -p $WEBDIR
     cp -rT ${DIR}/tmpfiles/webfiles/ $WEBDIR
+    
+    mkdir -p $WEBDIR/attachments
+
     chown -R www-data:www-data $WEBDIR
+    
+    chmod 664 $WEBDIR/attachments
+
     echo " Web files copied"
+
+
+
 fi
 
 if $INSTALLDB ; then
