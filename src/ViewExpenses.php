@@ -32,8 +32,9 @@ require dirname(__FILE__) . "/includes/commonSession.php";
 		#main {margin: 20px;}
 		#expheading h1 {color: #6b6ba7;font-family: Akshar;font-weight: 300;}
 		#list {padding: 20px;border: solid 1px #888;border-radius: 8px;}
-		#list td {padding-right: 12px;}
+		#list th,td {padding-right: 20px;}
 		.r {text-align: right;}
+		.b {font-weight: bold;}
 
 	</style>
 </head>
@@ -48,35 +49,40 @@ require dirname(__FILE__) . "/includes/commonSession.php";
 			<div id="list">
 				<table>
 					<tr><th>DATE</th><th>CHART</th><th>DESCRIPTION</th><th>ATTACHMENTS</th><th class="r">AMMOUNT</th><th></th></tr>
-                    <?php
+					<?php
 					$a = $DB->o_everyJournalExpense();
+					$lastMonthYear = "";
 					foreach($a as $j)
 					{
+						$my = (new DateTime($j->journal_date))->format("Ym");
+						if ($my != $lastMonthYear)
+						{
+							$strhddate = (new DateTime($j->journal_date))->format("M Y");
+							echo "<tr><td class='b'>{$strhddate}</td></tr>";
+							$lastMonthYear = $my;
+						}
 						$strDate = (new DateTime($j->journal_date))->format("j/n/Y");
 						$strchart = "{$j->chart_code} " . $j->chart_description_dr->toHTML();
 						$desc = $j->journal_description->toHTML();
 
 						$s = Secure::sec_encryptParam("i={$j->idjournal}", base64_encode($session->session_key));
 
-                        echo "<tr><td>{$strDate}</td><td>{$strchart}</td><td><a href='Expenses.php?v={$s}'>{$desc}</a></td>";
+						echo "<tr><td>{$strDate}</td><td>{$strchart}</td><td><a href='Expenses.php?v={$s}'>{$desc}</a></td>";
 						echo "<td>";
 						if ($j->journal_attachment_group)
 						{
-							echo "<a href=ViewAttach?g={}>VIEW</a>";
+							echo "<a href=ViewAttach.php?v={$s}>VIEW</a>";
 						}
 						echo "</td>";
 						echo "<td class='r'>";
 						echo LedgerAmount::format1($j->journal_gross);
 						echo "</td>";
-						
-						if (count($pair) == 2)
-                        {
-							if ($DB->hasExpensBeenPaid($j->idjournal))
-								echo "<td>PAID</td>";
-                        }
+
+						if ($DB->hasExpensBeenPaid($j->idjournal))
+							echo "<td>PAID</td>";
 						echo "</tr>";
 					}
-                    ?>
+					?>
 				</table>
 			</div>
 		</div>

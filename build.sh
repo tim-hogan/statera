@@ -146,6 +146,7 @@ cp ../src/AccountsReceivable.php                ./webfiles
 cp ../src/BankAccounts.php                      ./webfiles
 cp ../src/ChangePassword.php                    ./webfiles
 cp ../src/CreateQuote.php	                    ./webfiles
+cp ../src/CreateUser.php	                    ./webfiles
 cp ../src/EndofYear.php                         ./webfiles
 cp ../src/Expenses.php                          ./webfiles
 cp ../src/FinancialStatements.php               ./webfiles
@@ -165,6 +166,7 @@ cp ../src/ShareIssue.php                        ./webfiles
 cp ../src/Signin.php                            ./webfiles
 cp ../src/Signout.php                           ./webfiles
 cp ../src/UndoLast.php                          ./webfiles
+cp ../src/ViewAttach.php                        ./webfiles
 cp ../src/ViewExpenses.php                      ./webfiles
 cp ../src/Wizard.php                            ./webfiles
 

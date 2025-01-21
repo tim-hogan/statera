@@ -48,7 +48,8 @@ class attachment extends TableRow
 					"idattachment" => ["type" => "int" , "pk"=> true],
 					"attachment_deleted" => ["type" => "boolean"],
 					"attachment_group" => ["type" => "int"],
-					"attachment_filename" => ["type" => "varchar"]
+					"attachment_filename" => ["type" => "varchar"],
+					"attachment_original_name" => ["type" => "varchar"]
 				]
 			);
 	}
@@ -629,14 +630,21 @@ class stateraDB extends SQLPlus
 
 	public function getUserByRandId($randid)
 	{
-		return $this->o_singlequery("user","select * from user where user_randid = ?","s",$randid);
+		return $this->o_singlequery("user", "select * from user where user_randid = ?", "s", $randid);
 	}
 
-	public function createUser($username,$lastname,$firstname,$hash,$salt,$security,$timezone)
+	public function createUser($username, $lastname, $firstname, $hash, $salt, $security, $timezone)
 	{
 		$randid = bin2hex(openssl_random_pseudo_bytes(8));
 		$session_key = bin2hex(openssl_random_pseudo_bytes(32));
 		return $this->p_create("insert into user (user_randid,user_username,user_lastname,user_firstname,user_forcereset,user_hash,user_salt,user_security,user_timezone,user_session_key) values ('{$randid}',?,?,?,1,?,?,?,?,'{$session_key}')","sssssis",$username,$lastname,$firstname,$hash,$salt,$security,$timezone);
+	}
+
+	public function createUserWithEmail($username,$lastname,$firstname,$hash,$salt,$security,$timezone,$email)
+	{
+		$randid = bin2hex(openssl_random_pseudo_bytes(8));
+		$session_key = bin2hex(openssl_random_pseudo_bytes(32));
+		return $this->p_create("insert into user (user_randid,user_username,user_lastname,user_firstname,user_forcereset,user_hash,user_salt,user_security,user_timezone,user_session_key,user_email) values ('{$randid}',?,?,?,1,?,?,?,?,'{$session_key}',?)","sssssiss",$username,$lastname,$firstname,$hash,$salt,$security,$timezone,$email);
 	}
 
 	public function updatePassword($userid,$hash,$salt,$force=false,$renewdays=0)
@@ -815,9 +823,21 @@ class stateraDB extends SQLPlus
 		return null;
 	}
 
-	public function addAttachment($groupid,$filename)
+	public function addAttachment($groupid,$filename,$orig_name="")
 	{
-		return $this->p_create("insert into attachment (attachment_group,attachment_filename) values (?,?)", "is", $groupid, $filename);
+		return $this->p_create("insert into attachment (attachment_group,attachment_filename,attachment_original_name) values (?,?,?)", "iss", $groupid, $filename, $orig_name);
+	}
+
+	public function o_everyAttachmentForGroup($id)
+	{
+		$a = array();
+		$r = $this->p_query("select * from attachment where attachment_group = ?", "i", $id);
+		if ($r)
+		{
+			while ($o = $r->fetch_object("attachment"))
+				$a[] = $o;
+		}
+		return $a;
 	}
 
 	//*********************************************************************
@@ -1173,6 +1193,11 @@ class stateraDB extends SQLPlus
 	//*********************************************************************
 	// journal functions
 	//*********************************************************************
+	public function o_getJournal($id)
+	{
+		return $this->o_singlequery("journal", "select * from journal left join chart on chart_code = journal_chart where idjournal = ?", "i", $id);
+	}
+
 	public function allJournal($where="",$order="")
 	{
 		return $this->p_query("select * from journal {$where} {$order}",null,null);
@@ -1280,7 +1305,7 @@ class stateraDB extends SQLPlus
 	{
 		$a = array();
 		$a[0] = $this->o_singlequery("journal", "select * from journal left join chart on chart_code = journal_chart where idjournal = ?", "i", $id);
-		if ($a[0[])
+		if ($a[0])
 			$a[1] = $this->o_singlequery("journal", "select * from journal left join chart on chart_code = journal_chart where idjournal = ?", "i", $a[0]->journal_link);
 		return $a;
 	}

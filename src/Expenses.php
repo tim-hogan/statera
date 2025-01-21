@@ -21,10 +21,52 @@ $dtNow = new DateTime();
 $dtNow->setTimezone(new DateTimeZone($user->user_timezone->raw()));
 $company = $DB->getCompany();
 $taxclass = $DB->getTaxClassByName($company->company_sales_tax_name->raw());
+$mode = "create";
 
 $errmsg = "";
 
 $formfields=array();
+
+if ($_SERVER["REQUEST_METHOD"] == "GET")
+{
+	if (isset($_GET['v'])) 
+	{
+		$s = Secure::sec_decryptParamPart($_GET['v'], base64_encode($session->session_key));
+		if (!$s || strlen($s) == 0) 
+		{
+			error_log("ERROR: {$selff} [" . __LINE__ . "] Unable to decode key");
+			header("Location: SecurityError.php");
+			exit();
+		}
+		parse_str($s, $a);
+		$journal_id = $a["i"];
+		$o_journal = $DB->o_getJournal($journal_id);
+
+		$formfields["date"] = $o_journal->journal_date;
+		$formfields["desc"] = $o_journal->journal_description->toHTML();
+		$formfields["chart"] = $o_journal->journal_chart;
+		$formfields["amt"] = $o_journal->journal_gross;
+		if ($o_journal->journal_tax != 0.00)
+		{
+			$formfields["incgst"] = true;
+			$formfields["taxapplies"] = true;
+		}
+		else
+		{
+			$formfields["incgst"] = false;
+			$formfields["taxapplies"] = false;
+		}
+		$formfields["vendname"] = $o_journal->journal_vendor_name->toHTML();
+		$formfields["vendertax"] = $o_journal->journal_vendor_tax_number->toHTML();
+
+		$mode = "change";
+	}
+
+
+
+}
+
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
@@ -173,7 +215,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 			$attach_group_id = $o_attachGroup->idattachment_group;
 			for ($idx = 0; $idx < $file_count;$idx++)
 			{
-				$DB->addAttachment($attach_group_id,$_FILES["files"] ["newname"] [$idx]);
+				$DB->addAttachment($attach_group_id,$_FILES["files"] ["newname"] [$idx], $_FILES["files"]["name"][$idx]);
 			}
 		}
 		
@@ -236,6 +278,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		.inputcurrency {text-align: right;}
 		#form input.amt {display: inline;}
 		#form input.incgst {display: inline;font-size: 14pt;}
+		#attachist button {font-size: 10pt;margin-top: 0;}
 		#submit {margin-top: 10px; padding: 10px;border: solid 1px #aaa;}
 		#submit p {font-size: 14pt; color: #888;}
 		#additional_asset {display: none;padding: 10px;border: solid 1px #888;margin: 10px;width: 400px;}
@@ -274,6 +317,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 			}
 		}
 
+		function DeleteAttach(n) {
+
+		}
+
 		function start() {
 			//Find pre-select chart
 			let c = document.getElementById("chart");
@@ -303,6 +350,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 					$strDesc = (isset($formfields["desc"]) ) ? $formfields["desc"] : "";
 					$strAmnt = (isset($formfields["amt"]) ) ? $formfields["amt"] : "";
 					$checked = (isset($formfields["incgst"]) && ! $formfields["incgst"]) ? "" : "checked";
+					$checked2 = (isset($formfields["taxapplies"]) && !$formfields["taxapplies"]) ? "" : "checked";
 					$strVendname = (isset($formfields["vendname"]) ) ? $formfields["vendname"] : "";
 					$strVendTax = (isset($formfields["vendertax"]) ) ? $formfields["vendertax"] : "";
 					?>
@@ -347,7 +395,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 						<input id="incgst" class="incgst" type="checkbox" name="incgst" <?php echo $checked;?> /><span>AMOUNT INCLUDES <?php echo $company->company_sales_tax_name->toHTML();?></span>
 					</div>
 					<div class="formfield">
-						<input id="taxapplies" type="checkbox" name="taxapplies" checked /><span><?php echo $company->company_sales_tax_name->toHTML();?> APPLIES ON THIS EXPENSE</span>
+						<input id="taxapplies" type="checkbox" name="taxapplies" <?php echo $checked2; ?> /><span><?php echo $company->company_sales_tax_name->toHTML();?> APPLIES ON THIS EXPENSE</span>
 					</div>
 
 					<div id="vendor">
@@ -379,6 +427,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
 					<div id="attachments">
 						<h2>ATTACHMENTS</h2>
+						<?php
+						if ($mode == "change" && $o_journal->journal_attachment_group)
+						{
+							echo "<div id='attachist'>";
+							echo "<table>";
+								$items = $DB->o_everyAttachmentForGroup($o_journal->journal_attachment_group);
+								foreach($items as $a)
+								{
+									echo "<tr><td><a href='attachments/{$a->attachment_filename->raw()}'>{$a->attachment_original_name->raw()}</a></td><td><button type='button' _att='{$a->idattachment}' onclick='DeleteAttach(this)'>DELETE</button></td></tr>";
+								}
+							echo "</table>";
+							echo "</div>";
+						}
+						?>
 						<div class="formfield">
 							<label for="files">SELECT ATTACHMENTS</label>
 							<input type='file' id="files" name='files[]' multiple />
@@ -389,8 +451,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 					<div id="submit">
 					<p>Once completed choose from:</p>
 						<div id="buttons">
-							<button class="b1" type="submit" name="notpaid" title="This expense has not been paid yet">ENTER - NOT PAID YET</button>
-							<button class="b2" type="submit" name="paid" title="This expense has been paid and funds have been deducted from your bank account">ENTER - BEEN PAID</button>
+							<?php
+							if ($mode == "create") 
+							{
+								echo "<button class='b1' type='submit' name='notpaid' title='This expense has not been paid yet'>ENTER - NOT PAID YET</button>";
+								echo "<button class='b2' type='submit' name='paid' title='This expense has been paid and funds have been deducted from your bank account'>ENTER - BEEN PAID</button>";
+							}
+							?>
+							<?php
+							if ($mode == "change") 
+							{
+								echo "<button class='b2' type='submit' name='change' title='Change this expense'>CHANGE</button>";
+							}
+							?>
 						</div>
 					</div>
 				</form>
