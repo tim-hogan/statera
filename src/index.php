@@ -38,7 +38,7 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 	<link href="css/heading.css" rel="stylesheet" />
 	<link href="css/footer.css" rel="stylesheet" />
 	<style>
-		#main {padding: 20px;}
+		#main {padding: 20px;margin-bottom: 50px;}
 		div.links {padding: 10px; border: solid 1px #aaa;margin-bottom: 10px;}
 		.linkscontainer {display: flex;}
 		div.links h2 {font-family: Akshar; font-weight: normal;margin-top: 0; color: #666;}
@@ -116,8 +116,8 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 				</div>
 			</div>
 		</div>
+        <?php include ("./includes/footer.html");?>
 	</div>
-	<?php include ("./includes/footer.html");?>
 </body>
 </html>
 

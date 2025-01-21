@@ -72,7 +72,7 @@ if ($o_journal->journal_attachment_group)
                     <?php
 					foreach($items as $a)
 					{
-						echo "<tr><td><a href='attachments/{$a->attachment_filename->raw()}'>{$a->attachment_filename->raw()}</a></td></tr>";
+						echo "<tr><td><a href='attachments/{$a->attachment_filename->raw()}'>{$a->attachment_original_name->toHTML()}</a></td></tr>";
 					}
                     ?>
 				</table>

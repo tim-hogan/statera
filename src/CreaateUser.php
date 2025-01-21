@@ -35,7 +35,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	$randpw = Secure::createRandomPW();
 	$hash = $SEC->passwordHash($randpw, $salt);
 	$DB->createUserWithEmail($username, $lastname, $firstname, $hash, $salt, SECURITY_ADMIN, "Pacific/Auckland",$email);
-
+    $DB->createAudit("security", "New user created for username {$username}", $user->iduser);
+	
 	echo "New user created temp password: {$randpw}";
 	exit();
 }

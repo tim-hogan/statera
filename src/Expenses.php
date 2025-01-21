@@ -226,25 +226,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		}
 		
 		
-		if (isset($_POST["paid"]))
-			$xtn = $DB->expensePaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid, $attach_group_id,false);
+		if (isset($_POST["change"]) )
+        {
+            $errmsg = "EDIT OF AN EXISTING EXPENSE NOT IMPLEMENTED YET";    
+        }
 		else
-			$xtn = $DB->expenseUnPaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid, $attach_group_id,false);
-			
-		if ($DB->EndTransaction())
-		{
-			if ($fixed_asset)
+        {
+			if (isset($_POST["paid"]))
+				$xtn = $DB->expensePaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid, $attach_group_id,false);
+			elseif (isset($_POST["notpaid"]) )
+				$xtn = $DB->expenseUnPaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid, $attach_group_id,false);
+
+			if ($DB->EndTransaction())
 			{
-				$undo->add(new UndoAction("delete","asset","idasset",$assetid) );
+				if ($fixed_asset)
+				{
+					$undo->add(new UndoAction("delete","asset","idasset",$assetid) );
+					$undolist->push($undo);
+				}
+				$undo->add(new UndoAction("delete","journal","journal_xtn",$xtn) );
 				$undolist->push($undo);
+				$DB->updateUndoList($user->iduser,$undolist->toJSON());
+				$formfields = array();
 			}
-			$undo->add(new UndoAction("delete","journal","journal_xtn",$xtn) );
-			$undolist->push($undo);
-			$DB->updateUndoList($user->iduser,$undolist->toJSON());
-			$formfields = array();
-		}
-		else
-			$errmsg = "Database error creating expenses - contact support";
+			else
+				$errmsg = "Database error creating expenses - contact support";
+        }
 	}
    
 }
@@ -263,7 +270,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		#main {margin: 20px;}
 		#msg p.err {color: red;font-weight: bold;font-size: 14pt;}
 		#saleheading h1 {color: #6b6ba7;font-family: Akshar;font-weight: 300;}
-		#form {padding: 20px; border: solid 1px #888; border-radius: 8px;}
+		#form {padding: 20px; border: solid 1px #888; border-radius: 8px;margin-bottom: 50px;}
 		#form input {display: block;}
 		#form input[type='text'] {font-size: 12pt;}
 		#form input[type='checkbox'] {margin-top: 16px;display:inline;}
@@ -327,6 +334,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 			catChange(c);
 		}
 	</script>
+	<script type="text/javascript">
+    window.addEventListener('keydown',function(e) {
+        if (e.keyIdentifier=='U+000A' || e.keyIdentifier=='Enter' || e.keyCode==13) {
+            if (e.target.nodeName=='INPUT' && e.target.type=='text') {
+                e.preventDefault();
+
+                return false;
+            }
+        }
+    }, true);
+	</script>
+
 </head>
 <body onload="start()">
 	<div id="container">
@@ -470,6 +489,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 			</div>
 		</div>
 	</div>
+	<?php include ("./includes/footer.html");?>
 </body>
-<?php include ("./includes/footer.html");?>
 </html>
