@@ -598,9 +598,9 @@ class stateraDB extends SQLPlus
 		return $this->p_create("insert into rolling (rolling_entity,rolling_modulus,rolling_target,rolling_idx,rolling_disable_seconds) values (?,?,?,0,3600)","sid",$name,$modulus,$target);
 	}
 
-	public function updateRolling($name,$count,$values)
+	public function updateRolling($name, $count, $values)
 	{
-		return $this->p_update("update rolling set rolling_idx = ?, rolling_counters = ? where rolling_entity = ?","iss",$count,$values,$name);
+		return $this->p_update("update rolling set rolling_idx = ?, rolling_counters = ? where rolling_entity = ?", "iss", $count, $values, $name);
 	}
 
 	public function resetRolling($name)
@@ -612,8 +612,15 @@ class stateraDB extends SQLPlus
 	{
 		$dt = new DateTime('now');
 		$strTime = $dt->format('Y-m-d H:i:s');
-		return $this->p_update("update rolling set rolling_disabled = 1, rolling_disable_timestamp = ? where rolling_entity = ?","ss",$strTime,$name);
+		return $this->p_update("update rolling set rolling_entity_disabled = 1, rolling_disable_timestamp = ? where rolling_entity = ?","ss",$strTime,$name);
 	}
+
+	public function createRollingAudit($name,$rate)
+	{
+		$desc = "Security: Request rate too high for rolling marker {$name}, rate {$rate} per second, function disabled IP: {$_SERVER['REMOTE_ADDR']}";
+		$this->createAudit("rolling",$desc);
+	}
+
 
 	//*********************************************************************
 	// user functions
@@ -2294,6 +2301,18 @@ class stateraDB extends SQLPlus
 	{
 		$this->p_create("insert into quote (quote_number) values (?)", "i", $num);
 		return $this->o_getQuoteById($this->insert_id);
+	}
+
+	public function o_everyQuoteLine($quoteid)
+	{
+		$ret = array();
+		$r = $this->p_query("select * from quote_line where quote_line_quote = ? order by idquote_line", "i", $quoteid);
+		if ($r)
+		{
+			while ($a = $r->fetch_object("quote_line"))
+				$ret[] = $a;
+		}
+		return $ret;
 	}
 
 	//*********************************************************************
