@@ -21,7 +21,7 @@ if ($session->session_key)
 	$_SESSION["session_key"] = $session->session_key;
 
 $balance_sheet = $DB->financialreport($session->startdate, $session->enddate);
-
+$o_company = $DB->getCompany();
 
 
 ?>
@@ -32,7 +32,12 @@ $balance_sheet = $DB->financialreport($session->startdate, $session->enddate);
 	<title>FINANCIAL REPORT</title>
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Akshar:wght@300;400;700&display=swap');
+		
 		html, body {font-family: Arial, Helvetica, sans-serif;font-size: 10pt;margin: 0;height: 100%;}
+		#titlepage h1 {margin-bottom: 50px;}
+		#titlepage p.p1 {margin-left: 50px;font-size: 14pt;margin-bottom: 50px;}
+		#titlepage p.p2 {font-size: 18pt;font-weight: bold;margin-bottom: 75px;}
+        #titlepage p.p3 {font-size: 16pt;font-weight: bold;}
 		td.h1 {border-top: solid 1px black;font-weight: bold;}
 		td.h2 {font-weight: bold;}
 		td.blank1 {height: 1em;}
@@ -59,6 +64,10 @@ $balance_sheet = $DB->financialreport($session->startdate, $session->enddate);
 			.page {width: 800px; margin: auto; margin-bottom: 10px;padding: 10px;border: solid 10px #aaa;}
 		}
 		@media print {
+			#titlepage h1 {margin-bottom: 2cm;}
+        	#titlepage p.p1 {margin-left: 2cm;margin-bottom: 2cm;}
+            #titlepage p.p2 {margin-bottom: 3cm};
+            #titlepage p.p3 {}
 			footer {page-break-after: always;}
 			.page {width: 21cm; height: 29cm; margin: 2.5cm;}
 			 td.td1 {min-width: 8cm;}
@@ -73,8 +82,20 @@ $balance_sheet = $DB->financialreport($session->startdate, $session->enddate);
 <body>
 	<div id="container">
 		<h1>FINCNCIAL STATEMENTS</h1>
-		<p><?php var_dump($balance_sheet);?></p>
+		<!--<p><?php var_dump($balance_sheet);?></p>-->
 		<footer></footer>
+		<div class="page">
+			<div id="titlepage">
+				<h1>FINANCIAL REPORT</h1>
+				<p class="p1">for</p>
+                <?php
+				echo "<p class='p2'>{$o_company->company_name->toHTML()}</p>";
+                $s1 = (new DateTime($session->startdate))->format("j/n/Y");
+                $s2 = (new DateTime($session->enddate))->format("j/n/Y");
+                echo "<p class='p3'>FROM {$s1} TO {$s2}</p>";
+                ?>
+			</div>
+		</div>
 		<div class="page">
 			<h2>CASH</h2>
 			<div class="table">

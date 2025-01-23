@@ -73,99 +73,209 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		exit();
 	}
 
-	$accountid = 0;
-	$date = null;
-
-	if ( count($_POST["desc"]) == count($_POST["desc"]) &&
-		 count($_POST["desc"]) == count($_POST["qty"]) &&
-		 count($_POST["desc"]) == count($_POST["unit"]) &&
-		 count($_POST["desc"]) == count($_POST["prodid"]) &&
-		 count($_POST["desc"]) == count($_POST["total"]))
+	if (isset($_POST["quote"]))
 	{
-		$date = null;
-		if (isset($_POST["date"]))
-			$date = $_POST["date"];
-		if (isset($_POST["account"]))
+		$idquote = intval($_POST["quote"]);
+		if ($idquote)
 		{
-			$accountid = intval($_POST["account"]);
-			$account = $DB->getAccount($accountid);
-		}
-
-		error_log("Mode = {$_POST["mode"]}");
-
-		if (!isset($_POST["mode"]))
-		{
-			error_log("No mode set ");
-			$errmsg = "ERROR: Internal error - no mode set";
-		}
-
-		if ($_POST["mode"] == "account" && $accountid == 0)
-			$errmsg = "ERROR: You must specifiy an account";
-
-		$description = FormList::getField($_POST["description"]);
-
-		//Save off all the form fields
-		$formfields["date"] = $date;
-		$formfields["description"] = htmlspecialchars($description);
-		$formfields["account"] = $accountid;
-		$formfields["mode"] = $_POST["mode"];
-		$formfields["lines"] = array();
-
-		for($idx = 0; $idx < count($_POST["desc"]);$idx++)
-		{
-			$line = array();
-			$line["desc"] = $_POST["desc"] [$idx];
-			$line["qty"] = $_POST["qty"] [$idx];
-			$line["unitdesc"] = $_POST["unitdesc"] [$idx];
-			$line["unit"] = $_POST["unit"] [$idx];
-			$line["prodid"] = $_POST["prodid"] [$idx];
-			$line["total"] = $_POST["total"] [$idx];
-
-			$formfields["lines"] [] = $line;
-		}
-
-		if (strlen($errmsg) == 0)
-		{
-
-
-			//Switch based on mode
-			switch ($_POST["mode"])
+			$o_quote = $DB->o_getQuoteById($idquote);
+			if ($o_quote->quote_customer_account)
 			{
-				case "cash":
-					$undo = new Undo("Cash sale");
-
-					$DB->BeginTransaction();
-
-					$invoice = $DB->createCashSaleInvoice($accountid,$date);
-					if ($invoice)
+				$o_account = $DB->getAccount($o_quote->quote_customer_account);
+				if ($o_account)
+				{
+					$formfields["account"] = $o_account->idaccount;
+					$o_lines = $DB->o_everyQuoteLine($idquote);
+					foreach($o_lines as $o_line)
 					{
-						$undo->add(new UndoAction("delete","invoice","idinvoice",$invoice->idinvoice) );
+						$line = array();
+						$line["desc"] = $o_line->quote_line_descripton->toHTML();
+						$line["qty"] = $o_line->quote_line_qty;
+						$line["total"] = $o_line->quote_line_cost;
+						$line["unitdesc"] = "";
+						$line["unit"] = "";
+						$line["prodid"] = 0;
 
-						//Create lines
-						$net = 0.0;
-						for ($idx = 0; $idx < count($_POST["desc"]);$idx++)
+						$formfields["lines"][] = $line;
+					}
+				}
+			}
+		}
+	}
+
+	else
+	{
+
+		$accountid = 0;
+		$date = null;
+
+		if ( count($_POST["desc"]) == count($_POST["desc"]) &&
+			 count($_POST["desc"]) == count($_POST["qty"]) &&
+			 count($_POST["desc"]) == count($_POST["unit"]) &&
+			 count($_POST["desc"]) == count($_POST["prodid"]) &&
+			 count($_POST["desc"]) == count($_POST["total"]))
+		{
+			$date = null;
+			if (isset($_POST["date"]))
+				$date = $_POST["date"];
+			if (isset($_POST["account"]))
+			{
+				$accountid = intval($_POST["account"]);
+				$account = $DB->getAccount($accountid);
+			}
+
+			if (!isset($_POST["mode"]))
+			{
+				error_log("No mode set ");
+				$errmsg = "ERROR: Internal error - no mode set";
+			}
+
+			if ($_POST["mode"] == "account" && $accountid == 0)
+				$errmsg = "ERROR: You must specifiy an account";
+
+			$description = FormList::getField($_POST["description"]);
+
+			//Save off all the form fields
+			$formfields["date"] = $date;
+			$formfields["description"] = htmlspecialchars($description);
+			$formfields["account"] = $accountid;
+			$formfields["mode"] = $_POST["mode"];
+			$formfields["lines"] = array();
+
+			for($idx = 0; $idx < count($_POST["desc"]);$idx++)
+			{
+				$line = array();
+				$line["desc"] = $_POST["desc"] [$idx];
+				$line["qty"] = $_POST["qty"] [$idx];
+				$line["unitdesc"] = $_POST["unitdesc"] [$idx];
+				$line["unit"] = $_POST["unit"] [$idx];
+				$line["prodid"] = $_POST["prodid"] [$idx];
+				$line["total"] = $_POST["total"] [$idx];
+
+				$formfields["lines"] [] = $line;
+			}
+
+			if (strlen($errmsg) == 0)
+			{
+
+
+				//Switch based on mode
+				switch ($_POST["mode"])
+				{
+					case "cash":
+						$undo = new Undo("Cash sale");
+
+						$DB->BeginTransaction();
+
+						$invoice = $DB->createCashSaleInvoice($accountid,$date);
+						if ($invoice)
 						{
-							//Create an invoice lines
-							$productid = intval($_POST["prodid"] [$idx]);
-							$linedesc = $_POST["desc"] [$idx];
-							$qty = floatval($_POST["qty"] [$idx]);
-							$unitdesc = $_POST["unitdesc"] [$idx];
-							$unit = floatval($_POST["unit"] [$idx]);
-							$total = round($qty * $unit,2);
+							$undo->add(new UndoAction("delete","invoice","idinvoice",$invoice->idinvoice) );
 
-							$line = $DB->createInvoiceLine($invoice->idinvoice,$productid,$linedesc,$qty,$unitdesc,$unit,$total);
-							if ($line)
+							//Create lines
+							$net = 0.0;
+							for ($idx = 0; $idx < count($_POST["desc"]);$idx++)
 							{
-								$undo->add(new UndoAction("delete","invoice_line","idinvoice_line",$line->idinvoice_line) );
-								$net += $total;
+								//Create an invoice lines
+								$productid = intval($_POST["prodid"] [$idx]);
+								$linedesc = $_POST["desc"] [$idx];
+								$qty = floatval($_POST["qty"] [$idx]);
+								$unitdesc = $_POST["unitdesc"] [$idx];
+								$unit = floatval($_POST["unit"] [$idx]);
+								if ($unit == 0 || $qty = 0)
+									$total = floatval($_POST["total"][$idx]);
+								else
+									$total = round($qty * $unit, 2);
+
+								$line = $DB->createInvoiceLine($invoice->idinvoice,$productid,$linedesc,$qty,$unitdesc,$unit,$total);
+								if ($line)
+								{
+									$undo->add(new UndoAction("delete","invoice_line","idinvoice_line",$line->idinvoice_line) );
+									$net += $total;
+								}
+								else
+									$DB->TransactionError();
+							}
+
+							//Create cash sale hjournal entries
+							if ($account)
+							{
+								if ($account->account_sale_tax_class)
+								{
+									$tax_class_account = $DB->getTaxClass($account->account_sale_tax_class);
+									$tax = $DB->getTaxRateForClassAndDate($tax_class_account->idtaxclass,new DateTime());
+									$taxrate = 0.0;
+									if ($tax)
+										$taxrate = $tax->taxrate_rate;
+									$ledgerAmount = LedgerAmount::createFromNet($net,$taxrate);
+								}
+								else
+									$ledgerAmount = LedgerAmount::createFromNet($net,0.0);
 							}
 							else
-								$DB->TransactionError();
-						}
+								$ledgerAmount = LedgerAmount::createFromNet($net,$salestaxrate);
+							$xtn = $DB->saleCash($date,$description,$accountid,$invoice->idinvoice,$ledgerAmount,0,0,false);
+							$undo->add(new UndoAction("delete","journal","journal_xtn",$xtn) );
 
-						//Create cash sale hjournal entries
-						if ($account)
+
+							$undolist->push($undo);
+
+						}
+						else
+							$DB->TransactionError();
+
+						if ( $DB->EndTransaction() )
 						{
+							$v = "i={$invoice->idinvoice}";
+							$s = Secure::sec_encryptParam($v,base64_encode($session->session_key));
+							$DB->updateUndoList($user->iduser, $undolist->toJSON());
+							header("Location: Invoice.php?v={$s}");
+							exit();
+						}
+						else
+						{
+							error_log("Database transaction failed");
+							$errmsg = "ERROR: Database transaction failed - call support";
+						}
+						break;
+
+					case "account":
+						$undo = new Undo("Account sale");
+
+						$DB->BeginTransaction();
+
+						$invoice = $DB->createAccountSaleInvoice($accountid,$date);
+						if ($invoice)
+						{
+							$undo->add(new UndoAction("delete","invoice","idinvoice",$invoice->idinvoice) );
+
+							//Create lines
+							$net = 0.0;
+							for ($idx = 0; $idx < count($_POST["desc"]);$idx++)
+							{
+								//Create an invoice lines
+								$productid = intval($_POST["prodid"] [$idx]);
+								$linedesc = $_POST["desc"] [$idx];
+								$qty = floatval($_POST["qty"] [$idx]);
+								$unitdesc = $_POST["unitdesc"] [$idx];
+								$unit = floatval($_POST["unit"] [$idx]);
+								if ($unit == 0 || $qty = 0)
+									$total = floatval($_POST["total"][$idx]);
+								else
+									$total = round($qty * $unit,2);
+
+
+								$line = $DB->createInvoiceLine($invoice->idinvoice,$productid,$linedesc,$qty,$unitdesc,$unit,$total);
+								if ($line)
+								{
+									$undo->add(new UndoAction("delete","invoice_line","idinvoice_line",$line->idinvoice_line) );
+									$net += $total;
+								}
+								else
+									$DB->TransactionError();
+							}
+
+							//Create account sale journal entries
 							if ($account->account_sale_tax_class)
 							{
 								$tax_class_account = $DB->getTaxClass($account->account_sale_tax_class);
@@ -177,111 +287,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 							}
 							else
 								$ledgerAmount = LedgerAmount::createFromNet($net,0.0);
+
+							$xtn = $DB->saleAccount($date,$description,$accountid,$invoice->idinvoice,$ledgerAmount,0,0,false);
+							$undo->add(new UndoAction("delete","journal","journal_xtn",$xtn) );
+
+
+							$undolist->push($undo);
 						}
 						else
-							$ledgerAmount = LedgerAmount::createFromNet($net,$salestaxrate);
-						$xtn = $DB->saleCash($date,$description,$accountid,$invoice->idinvoice,$ledgerAmount,0,0,false);
-						$undo->add(new UndoAction("delete","journal","journal_xtn",$xtn) );
+							$DB->TransactionError();
 
-
-						$undolist->push($undo);
-						$DB->updateUndoList($user->iduser,$undolist->toJSON());
-
-					}
-					else
-						$DB->TransactionError();
-
-					if ( $DB->EndTransaction() )
-					{
-						$v = "i={$invoice->idinvoice}";
-						$s = Secure::sec_encryptParam($v,base64_encode($session->session_key));
-						header("Location: Invoice.php?v={$s}");
-						exit();
-					}
-					else
-					{
-						error_log("Database transaction failed");
-						$errmsg = "ERROR: Database transaction failed - call support";
-					}
-					break;
-
-				case "account":
-					$undo = new Undo("Account sale");
-
-					$DB->BeginTransaction();
-
-					$invoice = $DB->createAccountSaleInvoice($accountid,$date);
-					if ($invoice)
-					{
-						$undo->add(new UndoAction("delete","invoice","idinvoice",$invoice->idinvoice) );
-
-						//Create lines
-						$net = 0.0;
-						for ($idx = 0; $idx < count($_POST["desc"]);$idx++)
+						if ( $DB->EndTransaction() )
 						{
-							//Create an invoice lines
-							$productid = intval($_POST["prodid"] [$idx]);
-							$linedesc = $_POST["desc"] [$idx];
-							$qty = floatval($_POST["qty"] [$idx]);
-							$unitdesc = $_POST["unitdesc"] [$idx];
-							$unit = floatval($_POST["unit"] [$idx]);
-							$total = round($qty * $unit,2);
-
-							$line = $DB->createInvoiceLine($invoice->idinvoice,$productid,$linedesc,$qty,$unitdesc,$unit,$total);
-							if ($line)
-							{
-								$undo->add(new UndoAction("delete","invoice_line","idinvoice_line",$line->idinvoice_line) );
-								$net += $total;
-							}
-							else
-								$DB->TransactionError();
-						}
-
-						//Create account sale journal entries
-						if ($account->account_sale_tax_class)
-						{
-							$tax_class_account = $DB->getTaxClass($account->account_sale_tax_class);
-							$tax = $DB->getTaxRateForClassAndDate($tax_class_account->idtaxclass,new DateTime());
-							$taxrate = 0.0;
-							if ($tax)
-								$taxrate = $tax->taxrate_rate;
-							$ledgerAmount = LedgerAmount::createFromNet($net,$taxrate);
+							$v = "i={$invoice->idinvoice}";
+							$s = Secure::sec_encryptParam($v,base64_encode($session->session_key));
+							$DB->updateUndoList($user->iduser, $undolist->toJSON());
+							header("Location: Invoice.php?v={$s}");
+							exit();
 						}
 						else
-							$ledgerAmount = LedgerAmount::createFromNet($net,0.0);
-
-						$xtn = $DB->saleAccount($date,$description,$accountid,$invoice->idinvoice,$ledgerAmount,0,0,false);
-						$undo->add(new UndoAction("delete","journal","journal_xtn",$xtn) );
-
-
-						$undolist->push($undo);
-						$DB->updateUndoList($user->iduser,$undolist->toJSON());
-					}
-					else
-						$DB->TransactionError();
-
-					if ( $DB->EndTransaction() )
-					{
-						$v = "i={$invoice->idinvoice}";
-						$s = Secure::sec_encryptParam($v,base64_encode($session->session_key));
-						header("Location: Invoice.php?v={$s}");
-						exit();
-					}
-					else
-					{
-						error_log("Database transaction failed");
-						$errmsg = "ERROR: Database transaction failed - call support";
-					}
-					break;
+						{
+							error_log("Database transaction failed");
+							$errmsg = "ERROR: Database transaction failed - call support";
+						}
+						break;
+				}
 			}
 		}
+		else
+		{
+			error_log("Invalid form data input");
+			$errmsg = "Invalid input";
+		}
 	}
-	else
-	{
-		error_log("Invalid form data input");
-		$errmsg = "Invalid input";
-	}
-
 }
 
 
@@ -299,6 +337,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	<style>
 		#saleheading {margin-left: 20px;}
 		#saleheading h1 {color: #6b6ba7;font-family: Akshar;font-weight: 300;}
+		#tools {margin: 20px;padding: 20px;border: solid 1px #888;border-radius: 8px;}
+		#tools h2 {color: #6b6ba7;font-family: Akshar;font-weight: 300;font-size: 1.5em;}
 		#form {margin: 20px;padding: 20px;border: solid 1px #888;border-radius: 8px;}
 		#form label {display: block;margin-top: 12px;}
 		#form label.first {margin-top: 0;}
@@ -414,7 +454,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
 		function clearEntryFields() {
 			st.ge("product").value = "";
-			st.ge("quantity").value = "1";
+			st.ge("quantity").value = "";
 			st.ge("unitcost").value = "";
 			st.ge("totalcost").value = "";
 		}
@@ -424,7 +464,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 			let tbl = st.ge("saleslist");
 			st.removeAllChildren(tbl);
 			for (let l of items.lines) {
-				st.trow(tbl, l.desc, l.qty, "$" + l.unit, "$" + l.total,"<button onclick='deleteLine("+ l.seq +")'>DEL</button>");
+				let newqty = (l.qty == 0) ? "" : l.qty;
+				st.trow(tbl, l.desc, newqty, "$" + l.unit, "$" + l.total,"<button onclick='deleteLine("+ l.seq +")'>DEL</button>");
 				sum += parseFloat(l.total);
 			}
 			let tax = 0;
@@ -450,18 +491,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 				product_id = p._productid;
 			}
 
-			let unitcost = parseFloat(st.ge("unitcost").value).toFixed(2);
+			let strunitcost = String(st.ge("unitcost").value);
+			let unitcost = st.parseCurrency(strunitcost);
+			let qty = parseInt(st.ge("quantity").value);
 
 			if (isNaN(unitcost)) {
 				unitcost = "";
 			}
 
+			if (isNaN(qty)) {
+				qty = 0;
+			}
+
+			let inctax = st.ge("incltax");
+
+			//Remove $ signs and commas
+			let strtot = String(st.ge("totalcost").value);
+			let tot = st.parseCurrency(strtot);
+			if (inctax.checked) {
+				tot = parseFloat(tot / (1 + g_salesTaxRate)).toFixed(2);
+			}
+
 			let l = new Line(m,
 				st.ge("product").value,
-				parseFloat(st.ge("quantity").value),
+				qty,
 				st.ge("unitdesc").value,
 				unitcost,
-				parseFloat(st.ge("totalcost").value).toFixed(2),
+				tot,
 				product_id
 			);
 
@@ -544,6 +600,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 					echo "<h1>SALE ON ACCOUNT</h1>";
 				?>
 			</div>
+			<div id="tools">
+				<h2>GENERATE FROM QUOTE</h2>
+				<form method="post" action="<?php echo "{$selff}?v={$_GET["v"]}";?>">
+					<select name="quote">
+						<option value="0">[SELECT QUOTE]</option>
+						<?php
+							$r = $DB->allAcceptedQuotesWithAccountDesc();
+							while ($o_quote = $r->fetch_object("quote"))
+							{
+								$strNum = sprintf("%05d",$o_quote->quote_number);
+								echo "<option value='{$o_quote->idquote}'>{$strNum} {$o_quote->quote_contact_name->toHTML()}</option>";    
+							}
+						?>
+					</select>
+					<?php echo "<input type='hidden' name='formtoken' value='{$session->csrf_key}'>"; ?>
+					<button>GENERATE</button>
+				</form>
+			</div>
 			<div id="form">
 				<div class="selectdiv">
 					<table>
@@ -622,7 +696,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 							<td>
 								<input list="products" name="product" id="product" size="60" onchange="prodchange(this)" />
 							</td><td>
-								<input class="r" id="quantity" name="quantity" size="2" value="1" onchange="calcLine()" />
+								<input class="r" id="quantity" name="quantity" size="2" onchange="calcLine()" />
 							</td><td>
 								<input class="r" id="unitdesc" name="unitdesc" size="3" />
 							</td><td>

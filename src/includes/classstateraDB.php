@@ -272,6 +272,7 @@ class quote extends TableRow
 					"quote_deleted" => ["type" => "boolean"],
 					"quote_number" => ["type" => "int"],
 					"quote_date" => ["type" => "date"],
+					"quote_customer_account" => ["type" => "date"],
 					"quote_contact_name" => ["type" => "varchar"],
 					"quote_contact_phone" => ["type" => "varchar"],
 					"quote_contact_email" => ["type" => "varchar"],
@@ -284,7 +285,7 @@ class quote extends TableRow
 					"quote_address2" => ["type" => "varchar"],
 					"quote_address3" => ["type" => "varchar"],
 					"quote_address4" => ["type" => "varchar"],
-					"quote_address5" => ["type" => "varchar"]
+					"quote_city" => ["type" => "varchar"]
 				]
 			);
 	}
@@ -350,7 +351,7 @@ class account extends TableRow
 			parent::__construct
 			(
 				[
-					"idaccount" =>["type" => "int"],
+					"idaccount" =>["type" => "int", "pk" => true],
 					"account_deleted"=>["type" => "boolean"],
 					"account_name" =>["type" => "varchar"],
 					"account_email" =>["type" => "varchar"],
@@ -740,7 +741,10 @@ class stateraDB extends SQLPlus
 
 	public function updateUndoList($iduser,$list)
 	{
-		return $this->p_update("update user set user_undolist = ? where iduser = ?","si",$list,$iduser);
+		if (strlen($list) < 4000)
+			return $this->p_update("update user set user_undolist = ? where iduser = ?", "si", $list, $iduser);
+		else
+			return null;
 	}
 
 	//*********************************************************************
@@ -967,7 +971,7 @@ class stateraDB extends SQLPlus
 		return $this->o_singlequery("account","select * from account where idaccount = ?","i",$id);
 	}
 
-	public function allAccounts($where='',$order='')
+	public function allAccounts($where='',$order = '')
 	{
 		return $this->p_query("select * from account left join taxclass on idtaxclass = account_sale_tax_class {$where} {$order}",null,null);
 	}
@@ -991,7 +995,8 @@ class stateraDB extends SQLPlus
 		$r = $this->p_query("select invoice_line_product, count(*) as CNT from invoice_line group by invoice_line_product",null,null);
 		while ($i = $r->fetch_assoc())
 		{
-			$this->p_update("update product set product_order = {$i['CNT']} where idproduct = {$i['invoice_line_product']}",null,null);
+			if ($i['invoice_line_product'])
+				$this->p_update("update product set product_order = {$i['CNT']} where idproduct = {$i['invoice_line_product']}",null,null);
 		}
 	}
 
@@ -2243,9 +2248,8 @@ class stateraDB extends SQLPlus
 
 		//Shares
 		$shares = array();
-		$r = $this->p_query("select * from share left join shareholder on idshareholder = share_shareholder order by shareholder_lastname,shareholder_firstnames,share_date",null,null);
-		while ($s = $r->fetch_assoc())
-		{
+		$r = $this->p_query("select * from share left join shareholder on idshareholder = share_shareholder order by shareholder_lastname,shareholder_firstnames,share_date", null, null);
+		while ($s = $r->fetch_assoc()) {
 			$pool = array();
 			$pool["date"] = $s["share_date"];
 			$name = strtoupper($s["shareholder_lastname"]) . ", " . $s["shareholder_firstnames"];
@@ -2303,6 +2307,11 @@ class stateraDB extends SQLPlus
 		return $this->o_getQuoteById($this->insert_id);
 	}
 
+	public function markQuoteAccepted($quoteid)
+	{
+		return $this->p_update("update quote set quote_status = 'accepted' where idquote = ?", "i", $quoteid);
+	}
+
 	public function o_everyQuoteLine($quoteid)
 	{
 		$ret = array();
@@ -2313,6 +2322,34 @@ class stateraDB extends SQLPlus
 				$ret[] = $a;
 		}
 		return $ret;
+	}
+
+	public function netSumQuoteLines($quoteid)
+	{
+		$sum = 0;
+		$r = $this->p_query("select * from quote_line where quote_line_quote = ? order by idquote_line", "i", $quoteid);
+		if ($r)
+		{
+			while ($a = $r->fetch_object("quote_line"))
+				$sum += $a->quote_line_cost;
+		}
+		return $sum;
+
+	}
+
+	public function allQuotes()
+	{
+		return $this->p_query("select * from quote where quote_deleted = 0 order by quote_number", null, null);
+	}
+
+	public function allQuotesDesc()
+	{
+		return $this->p_query("select * from quote where quote_deleted = 0 order by quote_number desc", null, null);
+	}
+
+	public function allAcceptedQuotesWithAccountDesc()
+	{
+		return $this->p_query("select * from quote where quote_deleted = 0 and quote_status = 'accepted' and quote_customer_account IS NOT null order by quote_number desc", null, null);
 	}
 
 	//*********************************************************************

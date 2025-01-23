@@ -168,6 +168,8 @@ cp ../src/Signout.php                           ./webfiles
 cp ../src/UndoLast.php                          ./webfiles
 cp ../src/ViewAttach.php                        ./webfiles
 cp ../src/ViewExpenses.php                      ./webfiles
+cp ../src/ViewQuote.php							./webfiles
+cp ../src/ViewQuotes.php						./webfiles
 cp ../src/Wizard.php                            ./webfiles
 
 emptyandcreate webfiles/includes

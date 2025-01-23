@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	$randpw = Secure::createRandomPW();
 	$hash = $SEC->passwordHash($randpw, $salt);
 	$DB->createUserWithEmail($username, $lastname, $firstname, $hash, $salt, SECURITY_ADMIN, "Pacific/Auckland",$email);
-    $DB->createAudit("security", "New user created for username {$username}", $user->iduser);
+	$DB->createAudit("security", "New user created for username {$username}", $user->iduser);
 	
 	echo "New user created temp password: {$randpw}";
 	exit();
@@ -54,6 +54,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	<style>
 		#main {margin: 20px;}
 		#form {padding: 20px;border: solid 1px #888;border-radius: 8px;}
+		#form label {display: block; font-size: 9pt; margin-bottom: 0;}
+		#form div.formfield {margin-bottom: 12px;}
 		#heading1 h1 {color: #6b6ba7;font-family: Akshar;font-weight: 300;}
 	</style>
 </head>
@@ -73,19 +75,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 					<input id="username" type="text" name="username" size="15" />
 				</div>
 				<div class="formfield">
-					<label for="lastname"LAST NAME</label>
+					<label for="lastname">LAST NAME</label>
 					<input id="lastname" type="text" name="lastname" size="15" />
 				</div>
 				<div class="formfield">
-					<label for="firstname"LAST NAME</label>
+					<label for="firstname">FIRST NAME</label>
 					<input id="firstname" type="text" name="firstname" size="15" />
 				</div>
 				 <div class="formfield">
-					<label for="email"LAST NAME</label>
+					<label for="email">EMAIL</label>
 					<input id="email" type="email" name="email" size="30" />
 				</div>
 			   <?php echo "<input type='hidden' name='formtoken' value='{$session->csrf_key}'>"; ?>
-				<button>CREATE NEW USER </button>
+				<button>CREATE NEW USER</button>
 			</form>
 		</div>
 	</div>

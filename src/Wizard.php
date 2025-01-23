@@ -51,7 +51,7 @@ $chart_expenses_operating = [
 	["Desc" => "ACC Levies", "tax" => 1, "m" => 0],
 	["Desc" => "Accomodation", "tax" => 1, "m" => 0],
 	["Desc" => "Accountants", "tax" => 1, "m" => 0],
-	["Desc" => "Adevertising", "tax" => 1, "m" => 0],
+	["Desc" => "Advertising", "tax" => 1, "m" => 0],
 	["Desc" => "Audition makeup/hair", "tax" => 1, "m" => 0,],
 	["Desc" => "Bank Fees", "tax" => null, "m" => 1],
 	["Desc" => "Cleaning", "tax" => 1, "m" => 0],

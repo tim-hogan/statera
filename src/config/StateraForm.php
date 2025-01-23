@@ -759,10 +759,10 @@ return [
 			"security_edit" => 0,
 			"form" => [
 				"display" => true,
-				"formlabel" => "account_sale_tax_class",
+				"formlabel" => "SALES TAX CLASS",
 				"title" => "",
 				"required" => false,
-				"default" => "",
+				"default" => "New Zealand GST",
 				"errtext" => "",
 				"posttext" => "",
 				"trim" => true,

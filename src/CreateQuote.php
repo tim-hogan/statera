@@ -16,17 +16,13 @@ function var_error_log($object = null, $text = '')
 
 require dirname(__FILE__) . "/includes/commonSession.php";
 $o_quote = null;
+$session->quote_num = $DB->getNextQuoteNumber();
 
-if (! $session->quote_num)
-{
-	$session->quote_num = $DB->getNextQuoteNumber();
-}
 
 $strQuote_num = sprintf("%05d", $session->quote_num);
-$view_quote = false;
 $errmsg = "";
 
-$formfields = ["date" => "","num" =>"","name" => "","email" => "","phone" => "", "addr1"=>"", "addr2" => "", "addr3" => "", "addr4" => "","addr5"=>""];
+$formfields = ["date" => "","num" =>"","name" => "","email" => "","phone" => "", "addr1"=>"", "addr2" => "", "addr3" => "", "addr4" => "","city"=>""];
 $dtNow = new DateTime();
 $dtNow->setTimezone(new DateTimeZone("Pacific/Auckland"));
 $formfields["date"] = $dtNow->format("Y-m-d");
@@ -36,66 +32,92 @@ $o_taxrate = $DB->getTaxRateForClassAndDate(1, $dtNow);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
+    var_error_log($_POST, "POST");
+
 	$o_quote = $DB->o_getQuoteByNum($session->quote_num);
 	if (!$o_quote)
 	{
-		$o_quote = $DB->createNewQuote($session->quote_num);
-	}
+		$o_quote = new quote();
 
-	$formfields["date"] = FormList::getField("date");
-	$formfields["num"] = FormList::getIntegerField("num");
-	$formfields["name"] = FormList::getField("name");
-	$formfields["email"] = FormList::getField("email");
-	$formfields["email"] = FormList::getField("phone");
-	$formfields["addr1"] = FormList::getField("addr1");
-	$formfields["addr1"] = FormList::getField("addr1");
-	$formfields["addr2"] = FormList::getField("addr2");
-	$formfields["addr3"] = FormList::getField("addr3");
-	$formfields["addr4"] = FormList::getField("addr4");
-	$formfields["addr5"] = FormList::getField("addr5");
+		$formfields["date"] = FormList::getField("date");
+		$formfields["num"] = FormList::getIntegerField("num");
+		$formfields["name"] = FormList::getField("name");
+		$formfields["email"] = FormList::getField("email");
+		$formfields["email"] = FormList::getField("phone");
+		$formfields["addr1"] = FormList::getField("addr1");
+		$formfields["addr1"] = FormList::getField("addr1");
+		$formfields["addr2"] = FormList::getField("addr2");
+		$formfields["addr3"] = FormList::getField("addr3");
+		$formfields["addr4"] = FormList::getField("addr4");
+		$formfields["city"] = FormList::getField("city");
 
-	$o_quote->quote_date = $formfields["date"];
-	$o_quote->quote_number = $formfields["num"];
-	$o_quote->quote_contact_name = $formfields["name"];
-	$o_quote->quote_contact_phone = $formfields["phone"];
+		$o_quote->quote_date = $formfields["date"];
+		$o_quote->quote_number = $formfields["num"];
+		$o_quote->quote_contact_name = $formfields["name"];
+		$o_quote->quote_contact_phone = $formfields["phone"];
 
-	$o_quote->quote_address1 = $formfields["addr1"];
-	$o_quote->quote_address2 = $formfields["addr2"];
-	$o_quote->quote_address3 = $formfields["addr3"];
-	$o_quote->quote_address4 = $formfields["addr4"];
-	$o_quote->quote_address5 = $formfields["addr5"];
+		$o_quote->quote_address1 = $formfields["addr1"];
+		$o_quote->quote_address2 = $formfields["addr2"];
+		$o_quote->quote_address3 = $formfields["addr3"];
+		$o_quote->quote_address4 = $formfields["addr4"];
+		$o_quote->quote_city = $formfields["city"];
 
-	$o_quote->quote_contact_email = $formfields["email"];
+		$o_quote->quote_contact_email = $formfields["email"];
 
-	//Now go through the lines
-	$nlines = max(count($_POST["item"]), count($_POST["description"]));
-	$nlines = max(count($_POST["cost"]), $nlines);
+		//Now go through the lines
+		$nlines = max(count($_POST["item"]), count($_POST["description"]));
+		$nlines = max(count($_POST["cost"]), $nlines);
 
-	$DB->BeginTransaction();
+		$DB->BeginTransaction();
 
-	for($idx = 0; $idx < $nlines; $idx++)
-	{
-		$o_line = new quote_line();
-		$o_line->quote_line_quote = $o_quote->idquote;
-		$o_line->quote_line_item = FormList::getIntegerIndexField("item", $idx);
-		$o_line->quote_line_descripton = FormList::getIndexField("description", $idx);
-		$o_line->quote_line_qty = FormList::getDecimalIndexField("qty",$idx);
-		$o_line->quote_line_cost = FormList::getCurrencyIndexField("cost", $idx);
+		if (isset($_POST["create_account"]) && $_POST["create_account"] == "on")
+        {
+            $o_account = new account();
+            $o_account->account_name = $o_quote->quote_contact_name->raw();
+            $o_account->account_email = $o_quote->quote_contact_email->raw();
+			$o_account->account_phone = $o_quote->quote_contact_phone->raw();
+			$o_account->account_address1 = $o_quote->quote_address1->raw();
+			$o_account->account_address2 = $o_quote->quote_address2->raw();
+			$o_account->account_address3 = $o_quote->quote_address3->raw();
+			$o_account->account_address4 = $o_quote->quote_address4->raw();
+			$o_account->account_city = $o_quote->quote_city->raw();
+			$o_account->account_sale_tax_class = 1;
+			$o_account->account_contact_accounts = $o_quote->quote_contact_name->raw();
+            $o_account = $o_account->create($DB);
+            if ($o_account)
+                $o_quote->quote_customer_account = $o_account->idaccount;
+        }
 
-		$o_line->create($DB);
 
-	}
+		$o_quote = $o_quote->create($DB);
+
+		for($idx = 0; $idx < $nlines; $idx++)
+		{
+			$o_line = new quote_line();
+			$o_line->quote_line_quote = $o_quote->idquote;
+			$o_line->quote_line_item = FormList::getIntegerIndexField("item", $idx);
+			$o_line->quote_line_descripton = FormList::getIndexField("description", $idx);
+			$o_line->quote_line_qty = FormList::getDecimalIndexField("qty",$idx);
+			$o_line->quote_line_cost = FormList::getCurrencyIndexField("cost", $idx);
+
+			$o_line->create($DB);
+
+		}
 
 
-	$o_quote->update($DB);
-
-	if ($DB->EndTransaction())
-	{
-		$view_quote = true;
-		$session->quote_num = 0;
+		if ($DB->EndTransaction())
+		{
+			$v = "i={$o_quote->idquote}";
+			$s = Secure::sec_encryptParam($v, base64_encode($session->session_key));
+			$session->quote_num = 0;
+			header("Location: ViewQuote.php?v={$s}");
+			exit();
+		}
+		else
+			$errmsg = "ERROR:Database update error";
 	}
 	else
-		$errmsg = "ERROR:Database update error";
+		$errmsg = "ERROR:Database quote number already exists";
 
 }
 ?>
@@ -140,14 +162,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 			#printarea {margin-top: 2.5cm; margin-bottom: 2.5cm; margin-left: 2cm; margin-right: 2cm;}
 			#printarea img {width: 10cm;}
 			#gap {height: 1cm;}
-			#feet p {margin-left: 1cm;margin-right: 1cm;}
+			#feet p {margin-left: 1.5cm;margin-right: 1.5cm;}
 			.tdgap1 {height: 0.5cm;}
 			.tdgap2 {height: 1.5cm;}
 		}
 	</style>
 	<script src="/js/st.js"></script>
 	<script>
-		view_quote = <?php echo ($view_quote) ? "true" : "false";?>;
 		function createTextInputField(parent, name, size, classs, defaultVal) {
 			let input = st.cea("input", parent);
 			st.sa(input,"name",name);
@@ -216,7 +237,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 						<input id="addr2" name="addr2" type="text" class="b s" size="30" value="<?php echo $formfields["addr2"]; ?>" />
 						<input id="addr3" name="addr3" type="text" class="b s" size="30" value="<?php echo $formfields["addr3"]; ?>" />
 						<input id="addr4" name="addr4" type="text" class="b s" size="30" value="<?php echo $formfields["addr4"]; ?>" />
-						<input id="addr5" name="addr5" type="text" class="b" size="30" value="<?php echo $formfields["addr5"]; ?>" />
+                        <label for="city">CITY</label>
+						<input id="city" name="city" type="text" class="b" size="30" value="<?php echo $formfields["city"]; ?>" />
 					</div>
 
 					<div class="form_field">
@@ -230,6 +252,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 						<input id="phone" name="phone" type="text" size="18" value="<?php echo $formfields["phone"];?>" maxlength="21" />
 					</div>
 
+					<div class="form_field">
+                        <label for="create_account">CREATE A NEW CUSTOMER ACCOUNT</label>
+						<input id="create_account" name="create_account" type="checkbox" />
+					</div>
 					<div class="form_field">
 						<h2>QUOTE LINES</h2>
 						<button type="button" onclick="addQuoteLine()" title="Add more lines">+</button>
@@ -245,131 +271,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 					<input type="hidden" name="formtoken" value="<?php echo $session->csrf_key;?>" />
 				</form>
 			</div>
-		</div>
-	</div>
-	<div id="printpage">
-		<div id="printarea">
-			<?php
-				if ($o_quote)
-				{
-					echo "<table>";
-					echo "<tr><td class='td1'><img src='images/precisetrees/Logo1-Transparent.png' /></td><td colspan='2' class='sz1 r'>QUOTE</td></tr>";
-
-					$o_lines = $DB->o_everyQuoteLine($o_quote->idquote);
-
-					var_error_log($o_lines, "o_lines");
-
-					$strQuote_num = sprintf("%05d", $o_quote->quote_number);
-					$dt = new DateTime($o_quote->quote_date);
-					$strdate = $dt->format("j/n/Y");
-					$dt->add(new DateInterval("P30D"));
-					$strdateexpire = $dt->format("j/n/Y");
-
-					echo "<tr>";
-						echo "<td class='td1'></td>";
-						echo "<td class='td2'>QUOTE #</td>";
-						echo "<td class='td3 r'>{$strQuote_num}</td>";
-					echo "</tr>";
-
-					echo "<tr>";
-						echo "<td class='td1'></td>";
-						echo "<td class='td2'>DATE</td>";
-						echo "<td class='td3 r'>{$strdate}</td>";
-					echo "</tr>";
-
-					echo "<tr>";
-						echo "<td class='td1'>TO:</td>";
-						echo "<td class='td2'>VALID UNTIL</td>";
-						echo "<td class='td3 r'>{$strdateexpire}</td>";
-					echo "</tr>";
-
-					echo "<tr>";
-						echo "<td class='td1'>{$o_quote->quote_contact_name->toHTML()}</td>";
-						echo "<td class='td2'></td>";
-						echo "<td class='td3'></td>";
-					echo "</tr>";
-					echo "<tr>";
-					echo "<td class='td1'>{$o_quote->quote_address1->toHTML()}</td>";
-						echo "<td class='td2'></td>";
-						echo "<td class='td3'></td>";
-					echo "</tr>";
-					echo "<tr>";
-					echo "<td class='td1'>{$o_quote->quote_address2->toHTML()}</td>";
-						echo "<td class='td2'></td>";
-						echo "<td class='td3'></td>";
-					echo "</tr>";
-					echo "<tr>";
-					echo "<td class='td1'>{$o_quote->quote_address3->toHTML()}</td>";
-						echo "<td class='td2'></td>";
-						echo "<td class='td3'></td>";
-					echo "</tr>";
-					echo "<td class='td1'>{$o_quote->quote_address4->toHTML()}</td>";
-						echo "<td class='td2'></td>";
-						echo "<td class='td3'></td>";
-					echo "</tr>";
-					echo "<td class='td1'>{$o_quote->quote_address5->toHTML()}</td>";
-						echo "<td class='td2'></td>";
-						echo "<td class='td3'></td>";
-					echo "</tr>";
-
-					echo "</table>";
-					echo "<div id='gap'></div>";
-
-					echo "<div id='lineitmes'>";
-					echo "<table id='tabelline'>";
-					$bHaveQty = false;
-					foreach($o_lines as $l)
-					{
-						if ($l->quote_line_qty != 0)
-							$bHaveQty = true;
-					}
-					if ($bHaveQty)
-						echo "<tr><th class='lcol1 l'>ITEM</th><th class='lcol2'>DESCRIPTION</th><th class='lcol3 r'>QTY</th><th class='lcol4 r'>COST</th></tr>";
-					else
-						echo "<tr><th class='lcol1 l'>ITEM</th><th class='lcol2'>DESCRIPTION</th><th class='lcol3 r'></th><th class='lcol4 r'>COST</th></tr>";
-
-					$sum = 0;
-					foreach($o_lines as $l)
-					{
-						$sum += $l->quote_line_cost;
-						$v = LedgerAmount::format1($l->quote_line_cost);
-						if ($l->quote_line_qty == 0)
-							$strQTY = "";
-						else
-							$strQTY = $l->quote_line_qty;
-
-						if (!$bHaveQty)
-							$strQTY = "";
-
-						echo "<tr><td class='lcol1'>{$l->quote_line_item}</td><td class='lcol2'>{$l->quote_line_descripton->toHTML()}</td><td class='lcol3 r'>{$strQTY}</td><td  class='lcol4 r'>{$v}</td></tr>";
-						echo "<tr><td colspan='3' class='tdgap1'></td></tr>";
-				}
-
-					$gst = $sum * $o_taxrate->taxrate_rate;
-					$total = $sum + $gst;
-					$v1 = LedgerAmount::format1($sum);
-					$v2 = LedgerAmount::format1($gst);
-					$v3 = LedgerAmount::format1($total);
-
-					echo "<tr><td colspan='3' class='tdgap2'></td></tr>";
-					echo "<tr><td class='lcol1 r'></td><td class='lcol2'></td><td class='lcol3'>SUBTOTAL</td><td  class='lcol4 r'>{$v1}</td></tr>";
-					echo "<tr><td colspan='3' class='tdgap1'></td></tr>";
-					echo "<tr><td class='lcol1 r'></td><td class='lcol2'></td><td class='lcol3'>GST</td><td  class='lcol4 r'>{$v2}</td></tr>";
-					echo "<tr><td colspan='3' class='tdgap1'></td></tr>";
-					echo "<tr><td class='lcol1 r'></td><td class='lcol2'></td><td class='lcol3'>TOTAL</td><td  class='lcol4 r'>{$v3}</td></tr>";
-
-					echo "</table>";
-					echo "</div>";
-					
-					echo "<div id='gap'></div>";
-
-					echo "<div id='feet'>";
-						echo "<p>To accept this quote please email your acceptance to admin@precisetrees.nz quoting the Quote number <strong>{$strQuote_num}<strong></p>";
-					echo "</div>";
-
-
-				}
-			?>
 		</div>
 	</div>
 </body>

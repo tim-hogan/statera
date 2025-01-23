@@ -62,6 +62,11 @@ var st = {
 			td.appendChild(c);
 			td.className = "td" + i++;
 		}
-	}
-
+	},
+	//acounting
+	parseCurrency(s) {
+		let v = s.replace("$", "");
+		v = v.replace(",", "");
+		return parseFloat(v).toFixed(2);
+    }
 }

@@ -61,16 +61,18 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 				<div class="links">
 					<h2>QUICK LINKS</h2>
 					<div class="linkscontainer">
+						<div class="link" href="MaintSel.php?t=account" onclick="sel(this)">NEW CUSTOMER</div>
 						<div class="link" href="Sale.php?v=<?php echo $salecash;?>" onclick="sel(this)">CASH SALE</div>
 						<div class="link" href="Sale.php?v=<?php echo $saleaccount;?>" onclick="sel(this)">SALE ON ACCOUNT</div>
 						<div class="link" href="Expenses.php" onclick="sel(this)">EXPENSES</div>
+						<div class="link" href="CreateQuote.php" onclick="sel(this)">QUOTE</div>
 					</div>
 				</div>
 				<div class="links">
 					<h2>TRANSACTIONS</h2>
 					<div class="linkscontainer">
 						<div class="link" href="NewLoan.php" onclick="sel(this)">NEW LOAN</div>
-                        <div class="link" href="LoanTransaction.php" onclick="sel(this)">UPDATE LOAN</div>
+						<div class="link" href="LoanTransaction.php" onclick="sel(this)">UPDATE LOAN</div>
 					</div>
 				</div>
 				<div class="links">
@@ -90,7 +92,8 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 					<div class="linkscontainer">
 						<div class="link" href="MaintSel.php?t=account" onclick="sel(this)">CUSTOMERS</div>
 						<div class="link" href="Invoices.php" onclick="sel(this)">INVOICES</div>
-                        <div class="link" href="ViewExpenses.php" onclick="sel(this)">VIEW EXPENSES</div>
+						<div class="link" href="ViewExpenses.php" onclick="sel(this)">VIEW EXPENSES</div>
+						<div class="link" href="ViewQuotes.php" onclick="sel(this)">VIEW QUOTES</div>
 						<div class="link" href="ShareIssue.php" onclick="sel(this)">ISSUE SHARES</div>
 						<div class="link" href="PayTax.php" onclick="sel(this)">PAY TAX</div>
 					</div>
@@ -116,7 +119,7 @@ $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 				</div>
 			</div>
 		</div>
-        <?php include ("./includes/footer.html");?>
+		<?php include ("./includes/footer.html");?>
 	</div>
 </body>
 </html>
