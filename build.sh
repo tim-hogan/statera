@@ -94,12 +94,12 @@ if ! $INGNOREGIT ; then
 	git pull devt $BRANCH
 	cd -
 
-	echo -e "Getting satera from GitHub"
+	echo -e "Getting statera from GitHub"
 	rm -fr .git
 	rm -fr *
 	git init
-	git remote add satera https://github.com/tim-hogan/statera.git
-	git pull satera $BRANCH
+	git remote add statera https://github.com/tim-hogan/statera.git
+	git pull statera $BRANCH
 
 	. version
 	OLDVERSION=${VERSION}
@@ -146,6 +146,7 @@ cp ../src/AccountsPayable.php                   ./webfiles
 cp ../src/AccountsReceivable.php                ./webfiles
 cp ../src/AuditLog.php							./webfiles
 cp ../src/BankAccounts.php                      ./webfiles
+cp ../src/CashFlowReport.php					./webfiles
 cp ../src/ChangePassword.php                    ./webfiles
 cp ../src/CreateUser.php	                    ./webfiles
 cp ../src/EndofYear.php                         ./webfiles
@@ -157,25 +158,33 @@ cp ../src/index.php                             ./webfiles
 cp ../src/Invoice.php                           ./webfiles
 cp ../src/Invoices.php                          ./webfiles
 cp ../src/JournalDump.php                       ./webfiles
+cp ../src/LoanAccounts.php						./webfiles
 cp ../src/LoanTransaction.php					./webfiles
 cp ../src/Maint.php                             ./webfiles
 cp ../src/MaintSel.php                          ./webfiles
 cp ../src/MonthlyChecklist.php					./webfiles
 cp ../src/NewLoan.php                           ./webfiles
+cp ../src/OnAPage.php							./webfiles
+cp ../src/PayRuns.php							./webfiles
+cp ../src/PaySlip.php							./webfiles
+cp ../src/PaySlips.php							./webfiles
 cp ../src/PayTax.php                            ./webfiles
 cp ../src/PayWage.php                           ./webfiles
 cp ../src/Quote.php								./webfiles
 cp ../src/ReceiveInterest.php					./webfiles
+cp ../src/Reconciliation.php					./webfiles
 cp ../src/Sale.php                              ./webfiles
 cp ../src/ShareIssue.php                        ./webfiles
 cp ../src/Signin.php                            ./webfiles
 cp ../src/Signout.php                           ./webfiles
+cp ../src/Statements.php						./webfiles
 cp ../src/stateraApi.php                        ./webfiles
 cp ../src/UndoLast.php                          ./webfiles
 cp ../src/ViewAttach.php                        ./webfiles
 cp ../src/ViewExpenses.php                      ./webfiles
 cp ../src/ViewFixedAssets.php                   ./webfiles
 cp ../src/ViewQuote.php							./webfiles
+cp ../src/ViewQuoteRequests.php					./webfiles
 cp ../src/ViewQuotes.php						./webfiles
 cp ../src/Wizard.php                            ./webfiles
 
@@ -290,7 +299,7 @@ if ! $INGNOREGIT && ! $TEST ; then
 	echo -e "git Commit"
 	git commit -m "Version ${VERSION}"
 	echo -e "git Push"
-	git push covidpass $BRANCH
+	git push statera $BRANCH
 fi
 
 chmod +x build.sh
