@@ -35,6 +35,26 @@ class glb extends TableRow
 
 }
 
+class asset extends TableRow
+{
+	function __construct($tabledata = null)
+	{
+		if ($tabledata)
+			parent::__construct($tabledata);
+		else
+			parent::__construct
+			(
+				[
+					"idasset" => ["type" => "int", "pk" => true],
+					"asset_name" => ["type" => "varchar"],
+					"asset_purhcase_date" => ["type" => "date"],
+					"asset_depreciation_method" => ["type" => "enum"],
+					"asset_depreciation_rate" => ["type" => "double"]
+				]
+			);
+	}
+}
+
 class attachment extends TableRow
 {
 	function __construct($tabledata = null)
@@ -69,6 +89,28 @@ class attachment_group extends TableRow
 					"attachment_group_timestamp" => ["type" => "datetime"],
 					"attachment_group_type" => ["type" => "varchar"],
 					"attachment_group_description" => ["type" => "varchar"]
+				]
+			);
+	}
+}
+
+class audit extends TableRow
+{
+	function __construct($tabledata = null)
+	{
+		if ($tabledata)
+			parent::__construct($tabledata);
+		else
+			parent::__construct
+			(
+				[
+					"idaudit" => ["type" => "int", "pk" => true],
+					"audit_timestamp" => ["type" => "datetime"],
+					"audit_type" => ["type" => "varchar"],
+					"audit_description" => ["type" => "varchar"],
+					"audit_user" => ["type" => "int"],
+					"user_firstname" => ["type" => "varchar"],
+					"user_lastname" => ["type" => "varchar"]
 				]
 			);
 	}
@@ -125,6 +167,7 @@ class user extends TableRow
 					"user_lastname" =>["type" => "varchar"],
 					"user_firstname" =>["type" => "varchar"],
 					"user_email" =>["type" => "varchar"],
+					"user_phone" => ["type" => "varchar"],
 					"user_forcereset" =>["type" => "boolean"],
 					"user_hash" =>["type" => "varchar"],
 					"user_salt" =>["type" => "varchar"],
@@ -141,10 +184,32 @@ class user extends TableRow
 					"user_pw_change_date" =>["type" => "datetime"],
 					"user_x509_serial" =>["type" => "varchar"],
 					"user_apikey" =>["type" => "varchar"],
-					"user_remember_me" =>["type" => "boolean"],
-					"user_session_key" =>["type" => "varchar"],
-					"user_session_data" =>["type" => "varchar"],
-					"user_undolist" =>["type" => "varchar"]
+					"user_remember_me" => ["type" => "boolean"],
+					"user_session_key" => ["type" => "varchar"],
+					"user_session_data" => ["type" => "varchar"],
+					"user_undolist" => ["type" => "varchar"],
+					"user_notify_quotes" => ["type" => "boolean"]
+				]
+			);
+	}
+}
+
+class taxbracket extends TableRow
+{
+	function __construct($tabledata = null)
+	{
+		if ($tabledata)
+			parent::__construct($tabledata);
+		else
+			parent::__construct
+			(
+				[
+					"idtaxbracket" =>["type" => "int","pk" => true],
+					"taxbracket_deleted" =>["type" => "boolean"],
+					"taxbracket_from_date" =>["type" => "date"],
+					"taxbracket_amount" =>["type" => "double"],
+					"taxbracket_percent" => ["type" => "double"],
+					"taxbracket_product" => ["type" => "double"]
 				]
 			);
 	}
@@ -183,27 +248,11 @@ class taxrate extends TableRow
 					"taxrate_taxclass" =>["type" => "int"],
 					"taxrate_from_date" =>["type" => "date"],
 					"taxrate_rate" =>["type" => "double"],
-					"taxrate_comments"=>["type" => "varchar"]
-				]
-			);
-	}
-}
-
-class asset extends TableRow
-{
-	function __construct($tabledata=null)
-	{
-		if ($tabledata)
-			parent::__construct($tabledata);
-		else
-			parent::__construct
-			(
-				[
-					"idasset" =>["type" => "int"],
-					"asset_name" =>["type" => "varchar"],
-					"asset_purhcase_date" =>["type" => "date"],
-					"asset_depreciation_method" =>["type" => "varchar"],
-					"asset_depreciation_rate" =>["type" => "double"]
+					"taxrate_comments"=>["type" => "varchar"],
+					"idtaxclass" => ["type" => "int"],
+					"taxclass_name" => ["type" => "varchar"],
+					"taxclass_description" => ["type" => "varchar"],
+					"taxclass_invoice_text" => ["type" => "varchar"]
 				]
 			);
 	}
@@ -285,7 +334,11 @@ class quote extends TableRow
 					"quote_address2" => ["type" => "varchar"],
 					"quote_address3" => ["type" => "varchar"],
 					"quote_address4" => ["type" => "varchar"],
-					"quote_city" => ["type" => "varchar"]
+					"quote_city" => ["type" => "varchar"],
+					"quote_option_no_item_cost" => ["type" => "boolean"],
+					"quote_accepted_timestamp" => ["type" => "datetime"],
+					"quote_declined_timestamp" => ["type" => "datetime"],
+					"quote_completed_timestamp" => ["type" => "datetime"]
 				]
 			);
 	}
@@ -324,9 +377,10 @@ class quote_request extends TableRow
 			parent::__construct
 			(
 				[
-					"idquote_request" => ["type" => "int"],
+					"idquote_request" => ["type" => "int", "pk" => true],
 					"quote_request_deleted" => ["type" => "boolean"],
 					"quote_request_date" => ["type" => "date"],
+					"quote_request_name" => ["type" => "varchar"],
 					"quote_request_phone" => ["type" => "varchar"],
 					"quote_request_email" => ["type" => "varchar"],
 					"quote_request_addreess1" => ["type" => "varchar"],
@@ -433,7 +487,9 @@ class invoice_line extends TableRow
 					"invoice_line_description" =>["type" => "varchar"],
 					"invoice_line_qty" =>["type" => "double"],
 					"invoice_line_unit_cost" =>["type" => "double"],
-					"invoice_line_total_cost"=>["type" => "double"]
+					"invoice_line_net_cost"=>["type" => "double"],
+					"invoice_line_tax_cost"=>["type" => "double"],
+					"invoice_line_gross_cost"=>["type" => "double"]
 				]
 			);
 	}
@@ -457,7 +513,9 @@ class journal extends TableRow
 					"journal_description"=>["type" => "varchar"],
 					"journal_net"=>["type" => "double"],
 					"journal_tax"=>["type" => "double"],
-					"journal_gross"=>["type" => "double"],
+					"journal_gross" =>["type" => "double"],
+					"journal_wage_tax" => ["type" => "double"],
+					"journal_tax_type" => ["type" => "varchar"],
 					"journal_link"=>["type" => "int"],
 					"journal_source"=>["type" => "int"],
 					"journal_source_chart"=>["type" => "int"],
@@ -470,7 +528,12 @@ class journal extends TableRow
 					"journal_tax_date"=>["type" => "date"],
 					"journal_shareholder"=>["type" => "int"],
 					"journal_vendor_name"=>["type" => "varchar"],
-					"journal_vendor_tax_number"=>["type" => "varchar"],
+					"journal_vendor_tax_number" =>["type" => "varchar"],
+					"journal_kiwisaver_employee" => ["type" => "double"],
+					"journal_kiwisaver_employer" => ["type" => "double"],
+					"journal_kiwisaver_esct_tax" => ["type" => "double"],
+					"other_chart" => ["type" => "int"],
+					"SUMGROSS" => ["type" => "double"],
 					"chart_code" =>["type" => "int"],
 					"chart_deleted" =>["type" => "boolean"],
 					"chart_type" =>["type" => "varchar"],
@@ -500,14 +563,61 @@ class shareholder extends TableRow
 				[
 					"idshareholder" =>["type" => "int"],
 					"shareholder_deleted" =>["type" => "boolean"],
-					"shareholder_lastname" =>["type" => "varchar"],
-					"shareholder_firstnames" =>["type" => "varchar"]
+					"shareholder_lastname" => ["type" => "varchar"],
+					"shareholder_firstnames" => ["type" => "varchar"]
 				]
 			);
 	}
 }
 
 class share extends TableRow
+{
+	function __construct($tabledata = null)
+	{
+		if ($tabledata)
+			parent::__construct($tabledata);
+		else
+			parent::__construct
+			(
+				[
+					"idshare" => ["type" => "int"],
+					"share_date" => ["type" => "date"],
+					"share_qty" =>["type" => "int"],
+					"share_buyprice" => ["type" => "double"],
+					"share_shareholder" =>["type" => "int"]
+				]
+			);
+	}
+}
+
+class timesheet extends TableRow
+{
+	function __construct($tabledata = null)
+	{
+		if ($tabledata)
+			parent::__construct($tabledata);
+		else
+			parent::__construct
+			(
+				[
+					"idtimesheet" => ["type" => "int", "pk" => true],
+					"timesheet_date" => ["type" => "date"],
+					"timesheet_type" => ["type" => "enum"],
+					"timesheet_staff" => ["type" => "int"],
+					"timesheet_direct_gross" => ["type" => "double"],
+					"timesheet_hours" => ["type" => "double"],
+					"timesheet_processed" =>["type" => "boolean"],
+					"timesheet_payxtn" => ["type" => "int"],
+					"timesheet_paid_date" => ["type" => "date"],
+					"timesheet_pay_cadence" => ["type" => "enum"],
+					"timesheet_entry_timestamp" => ["type" => "datetime"],
+					"timesheet_entry_user" => ["type" => "int"]
+				]
+			);
+	}
+}
+
+class staff extends TableRow
 {
 	function __construct($tabledata=null)
 	{
@@ -517,11 +627,28 @@ class share extends TableRow
 			parent::__construct
 			(
 				[
-					"idshare" =>["type" => "int"],
-					"share_date" =>["type" => "date"],
-					"share_qty" =>["type" => "int"],
-					"share_buyprice" =>["type" => "double"],
-					"share_shareholder" =>["type" => "int"]
+					"idstaff" => ["type" => "int", "pk" => true],
+					"staff_deleted" => ["type" => "boolean"],
+					"staff_name" => ["type" => "varchar"],
+					"staff_type" => ["type" => "enum"],
+					"staff_email" => ["type" => "varchar"],
+					"staff_phone" => ["type" => "varchar"],
+					"staff_start_date" => ["type" => "date"],
+					"staff_tax_number" => ["type" => "varchar"],
+					"staff_tax_code" => ["type" => "varchar"],
+					"staff_bank_acct_number" => ["type" => "varchar"],
+					"staff_bank_acct_name" => ["type" => "varchar"],
+					"staff_list_on_timesheet" => ["type" => "boolean"],
+					"staff_hourly_rate1" => ["type" => "double"],
+					"staff_hourly_rate2" => ["type" => "double"],
+					"staff_hourly_rate3" => ["type" => "double"],
+					"staff_add_holiday_pay" => ["type" => "boolean"],
+					"staff_holiday_pay_rate" => ["type" => "double"],
+					"staff_has_kiwi_saver" => ["type" => "boolean"],
+					"staff_kiwi_save_employer_rate" => ["type" => "double"],
+					"staff_kiwi_save_employee_rate" => ["type" => "double"],
+					"staff_use_esct_tax" => ["type" => "boolean"],
+					"staff_esct_tax_rate" => ["type" => "double"]
 				]
 			);
 	}
@@ -747,6 +874,18 @@ class stateraDB extends SQLPlus
 			return null;
 	}
 
+	public function o_everyUserNotifyQuote()
+	{
+		$ret = null;
+		$r = $this->p_query("select * from user where user_notify_quotes = 1", null, null);
+		if ($r)
+		{
+			while ($o = $r->fetch_object("user"))
+				$ret[] = $o;
+		}
+		return $ret;
+	}
+
 	//*********************************************************************
 	// user session getters and setters functions
 	//*********************************************************************
@@ -812,6 +951,18 @@ class stateraDB extends SQLPlus
 		return $this->p_query("select * from asset",null,null);
 	}
 
+	public function o_everyAsset()
+	{
+		$ret = array();
+		$r =  $this->p_query("select * from asset order by asset_purhcase_date", null, null);
+		if ($r)
+		{
+			while ($o = $r->fetch_object("asset"))
+				$ret[] = $o;
+		}
+		return $ret;
+	}
+
 	public function allAssetJournals()
 	{
 		$r = $this->p_query("select * from asset left join journal on journal_asset = idasset left join chart on idchart = journal_chart where chart_type = 'asset' and chart_subtype = 'fixed_asset'",null,null);
@@ -856,7 +1007,7 @@ class stateraDB extends SQLPlus
 	//*********************************************************************
 	public function getCompany()
 	{
-		return $this->o_singlequery("company","select * from company limit 1",null,null);
+		return $this->o_singlequery("company", "select * from company limit 1",null,null);
 	}
 
 	//*********************************************************************
@@ -883,7 +1034,7 @@ class stateraDB extends SQLPlus
 			$strDate = $date;
 
 		if (gettype($taxclass) == "integer")
-			return $this->o_singlequery("taxrate","select * from taxrate where taxrate_taxclass = ? and taxrate_from_date < ? order by taxrate_from_date desc limit 1","is",$taxclass,$strDate);
+			return $this->o_singlequery("taxrate","select * from taxrate left join taxclass on idtaxclass = taxrate_taxclass where taxrate_taxclass = ? and taxrate_from_date < ? order by taxrate_from_date desc limit 1","is",$taxclass,$strDate);
 		else
 			return $this->o_singlequery("taxrate","select * from taxrate left join taxclass on idtaxclass = taxrate_taxclass where taxclass_name = ? and taxrate_from_date < ? order by taxrate_from_date desc limit 1","ss",$taxclass,$strDate);
 	}
@@ -919,7 +1070,8 @@ class stateraDB extends SQLPlus
 
 	public function everyChartBank()
 	{
-		$r = $this->p_query("select * from chart where chart_type = 'cash' and chart_subtype = 'bank' order by chart_code",null,null);
+		$q = "select * from chart where chart_type = 'cash' and chart_subtype = 'bank' order by chart_code";
+		$r = $this->p_query($q,null,null);
 		if (!$r) {$this->sqlError($q); return null;}
 		if ($r->num_rows > 0)
 			return $r->fetch_all(MYSQLI_ASSOC);
@@ -928,8 +1080,12 @@ class stateraDB extends SQLPlus
 
 	public function everyChartExpense()
 	{
-		$r = $this->p_query("select * from chart left join taxclass on idtaxclass = chart_taxclass where chart_type = 'expense' order by chart_description",null,null);
-		if (!$r) {$this->sqlError($q); return null;}
+		$q = "select * from chart left join taxclass on idtaxclass = chart_taxclass where chart_type = 'expense' order by chart_description";
+		$r = $this->p_query($q, null, null);
+		if (!$r) {
+			$this->sqlError($q);
+			return null;
+		}
 		if ($r->num_rows > 0)
 			return $r->fetch_all(MYSQLI_ASSOC);
 		return null;
@@ -937,7 +1093,8 @@ class stateraDB extends SQLPlus
 
 	public function everyChartExpenseAndAsset()
 	{
-		$r = $this->p_query("select * from chart left join taxclass on idtaxclass = chart_taxclass where chart_type = 'expense' or chart_type = 'asset' order by chart_description",null,null);
+		$q = "select * from chart left join taxclass on idtaxclass = chart_taxclass where chart_type = 'expense' or chart_type = 'asset' order by chart_description";
+		$r = $this->p_query($q,null,null);
 		if (!$r) {$this->sqlError($q); return null;}
 		if ($r->num_rows > 0)
 			return $r->fetch_all(MYSQLI_ASSOC);
@@ -946,11 +1103,34 @@ class stateraDB extends SQLPlus
 
 	public function everyChartLoan()
 	{
-		$r = $this->p_query("select * from chart where chart_type = 'non current liability' and chart_subtype = 'loan' order by chart_code",null,null);
+		$q = "select * from chart where chart_type = 'non current liability' and chart_subtype = 'loan' order by chart_code";
+		$r = $this->p_query($q,null,null);
 		if (!$r) {$this->sqlError($q); return null;}
 		if ($r->num_rows > 0)
 			return $r->fetch_all(MYSQLI_ASSOC);
 		return null;
+	}
+
+	public function everyChartDescription()
+	{
+		$ret = array();
+		$r = $this->p_query("select * from chart", null, null);
+		while ($c = $r->fetch_object("chart"))
+		{
+			$ret[$c->chart_code] = $c->chart_description->toHTML();
+		}
+		return $ret;
+	}
+
+	public function everyChartType()
+	{
+		$ret = array();
+		$r = $this->p_query("select * from chart", null, null);
+		while ($c = $r->fetch_object("chart"))
+		{
+			$ret[$c->chart_code] = $c->chart_type->raw();
+		}
+		return $ret;
 	}
 
 	public function nextCOAAbove($n)
@@ -1176,14 +1356,14 @@ class stateraDB extends SQLPlus
 	//*********************************************************************
 	public function getInvoiceLine($id)
 	{
-		return $this->o_singlequery("invoice_line","select * from invoice_line where idinvoice_line = ?","i",$id);
+		return $this->o_singlequery("invoice_line", "select * from invoice_line where idinvoice_line = ?", "i",$id);
 	}
 
-	public function createInvoiceLine($invoiceid,$productid,$description,$qty,$unitdesc,$unit,$total)
+	public function createInvoiceLine($invoiceid,$productid,$description,$qty,$unitdesc,$unit,$net,$tax,$gross)
 	{
 		if (!$productid)
 			$productid = null;
-		$r = $this->p_create("insert into invoice_line (invoice_line_invoice,invoice_line_product,invoice_line_description,invoice_line_qty,invoice_line_unit_desc,invoice_line_unit_cost,invoice_line_total_cost) values (?,?,?,?,?,?,?)","iisdsdd",$invoiceid,$productid,$description,$qty,$unitdesc,$unit,$total);
+		$r = $this->p_create("insert into invoice_line (invoice_line_invoice,invoice_line_product,invoice_line_description,invoice_line_qty,invoice_line_unit_desc,invoice_line_unit_cost,invoice_line_net_cost,invoice_line_tax_cost,invoice_line_gross_cost) values (?,?,?,?,?,?,?,?,?)", "iisdsdddd",$invoiceid,$productid,$description,$qty,$unitdesc,$unit,$net,$tax,$gross);
 		if ($r)
 		{
 			return $this->getInvoiceLine($this->insert_id);
@@ -1194,12 +1374,213 @@ class stateraDB extends SQLPlus
 	public function everyInvoiceLine($idinvoice)
 	{
 		$idinvoice = intval($idinvoice);
-		return $this->every("invoice_line","where invoice_line_invoice = {$idinvoice}","order by idinvoice_line");
+		return $this->every("invoice_line","where invoice_line_invoice = {$idinvoice}", "order by idinvoice_line");
 	}
 
 	public function sumInvoiceLines($idinvoice)
 	{
-		return $this->p_singlequery("select sum(invoice_line_total_cost) as NET from invoice_line where invoice_line_invoice = ?","i",$idinvoice);
+		return $this->p_singlequery("select sum(invoice_line_net_cost) as NET, sum(invoice_line_tax_cost) as TAX, sum(invoice_line_gross_cost) as GROSS from invoice_line where invoice_line_invoice = ?", "i", $idinvoice);
+	}
+
+	//*********************************************************************
+	// staff functions
+	//*********************************************************************
+	public function o_getStaff($id)
+	{
+		return $this->o_singlequery("staff", "select * from staff where idstaff = ?", "i", $id);
+	}
+
+	public function o_everyStaffOnTimesheet()
+	{
+		$ret = array();
+		$r = $this->p_query("select * from staff where staff_deleted = 0 and staff_list_on_timesheet = 1 order by staff_name", null, null);
+		if ($r)
+		{
+			while ($o = $r->fetch_object("staff"))
+				$ret[] = $o;
+		}
+		return $ret;
+	}
+
+	public function allStaffWithUnpaidTime()
+	{
+		$ret = array();
+		$r = $this->p_query("select timesheet_staff , count(*) from timesheet left join staff on idstaff = timesheet_staff where timesheet_processed = 0 and staff_type = 'casual' group by timesheet_staff order by staff_name",null,null);
+		if ($r)
+		{
+			while ($rec = $r->fetch_assoc())
+			{
+				$ret[] = $this->o_getStaff($rec["timesheet_staff"]);
+			}
+		}
+		return $ret;
+	}
+
+	public function o_everyStaff()
+	{
+		$ret = array();
+		$r = $this->p_query("select * from staff where staff_deleted = 0 order by staff_name",null,null);
+		if ($r)
+		{
+			while ($o = $r->fetch_object("staff"))
+			{
+				$ret[] = $o;
+			}
+		}
+		return $ret;
+	}
+
+	//*********************************************************************
+	// taxbracket functions
+	//*********************************************************************
+	public function calcMarginalTax($date,$annual,$currentGross=0)
+	{
+
+		$c = 0;
+		$o = $this->o_singlequery("taxbracket","select * from taxbracket where taxbracket_from_date <= ? and taxbracket_amount <= ? order by taxbracket_from_date desc, taxbracket_amount desc limit 1", "sd", $date, $annual);
+		$v = $o->taxbracket_product;
+
+		if ($annual > $o->taxbracket_amount)
+		{
+
+			$o2 = $this->o_singlequery("taxbracket", "select * from taxbracket where taxbracket_from_date <= ? and taxbracket_amount > ? order by taxbracket_from_date desc, taxbracket_amount limit 1", "sd", $date, $annual);
+			$remainder = $annual - $o->taxbracket_amount;
+			$v += $o2->taxbracket_percent * ($annual - $o->taxbracket_amount);
+
+		}
+		$ratio = $v / $annual;
+		if ($currentGross > 0)
+		{
+			$c = $currentGross * $ratio;
+		}
+		return ["tax" => $v, "ratio" => $ratio, "current" => $c];
+	}
+
+
+
+	//*********************************************************************
+	// timesheet functions
+	//*********************************************************************
+	public function o_getTimeSheetFor($staffid,$date)
+	{
+		return $this->o_singlequery("timesheet", "select * from timesheet where timesheet_staff = ? and timesheet_date = ?", "is", $staffid, $date);
+	}
+
+	public function createUpdateTimeEntry($staffid,$date,$hours,$userid)
+	{
+		$o_ts = $this->o_getTimeSheetFor($staffid, $date);
+		if ($o_ts && ! $o_ts->timesheet_processed) {
+			$o_ts->timesheet_hours = $hours;
+			$o_ts->timesheet_entry_user = $userid;
+			$o_ts->update($this);
+		}
+		else
+		{
+			return $this->p_create("insert into timesheet (timesheet_date,timesheet_staff,timesheet_hours,timesheet_entry_user) values (?,?,?,?)", "sidi", $date, $staffid, $hours, $userid);
+		}
+	}
+
+	public function createPayDirectEntry($staffid, $date, $gross, $period,$userid)
+	{
+		return $this->p_create("insert into timesheet (timesheet_date,timesheet_staff,timesheet_type,timesheet_direct_gross,timesheet_pay_cadence,timesheet_entry_user) values (?,?,'direct',?,?,?)", "sidsi", $date, $staffid, $gross, $period,$userid);
+	}
+
+	public function deleteTimesheetEntry($staffid, $date)
+	{
+		return $this->p_delete("delete from timesheet where timesheet_staff = ? and timesheet_date = ?", "is", $staffid, $date);
+	}
+
+	public function everyTimeSheetForStaff($staffid, $start, $end)
+	{
+		error_log("start {$start} end {$end}");
+		$ret = array();
+		$r = $this->p_query("select * from timesheet where timesheet_staff = ? and timesheet_date >= ? and timesheet_date <= ? order by timesheet_date", "iss", $staffid, $start, $end);
+		if ($r)
+		{
+			while ($o = $r->fetch_object("timesheet"))
+				$ret[] = $o;
+		}
+		return $ret;
+	}
+
+	public function totalUnpaidTimesheetHours($idstaff)
+	{
+		$sum = 0;
+		$first = "";
+		$last = "";
+		$r = $this->p_query("select * from timesheet where timesheet_staff = ? and timesheet_processed = 0 order by timesheet_date", "i", $idstaff);
+		if ($r)
+		{
+			while ($rec = $r->fetch_assoc())
+			{
+				$sum += floatval($rec["timesheet_hours"]);
+				if (strlen($first) == 0)
+					$first = $rec["timesheet_date"];
+				$last = $rec["timesheet_date"];
+			}
+		}
+		return ["sum" => $sum, "date_first" => $first, "date_last" => $last];
+	}
+
+	public function periodTimesheetForStaffAndXtn($staffid,$xtnid)
+	{
+		$sum = 0.0;
+		$gross = 0.0;
+		$first = "";
+		$last = "";
+		$paid_date = "";
+		$type = "hours";
+		$r = $this->p_query("select * from timesheet where timesheet_staff = ? and timesheet_processed = 1 and timesheet_payxtn = ? order by timesheet_date", "ii", $staffid, $xtnid);
+		if ($r)
+		{
+			while ($rec = $r->fetch_assoc())
+			{
+				if ($rec["timesheet_type"] == "direct")
+				{
+					$gross += $rec["timesheet_direct_gross"];
+					$type = "direct";
+				}
+				else
+					$sum += floatval($rec["timesheet_hours"]);
+				if (strlen($first) == 0)
+					$first = $rec["timesheet_date"];
+				$last = $rec["timesheet_date"];
+				$paid_date = $rec["timesheet_paid_date"];
+			}
+
+		}
+		return ["sum" => $sum, "date_first" => $first, "date_last" => $last,"date_paid" => $paid_date,"type" => $type,"gross" => $gross];
+	}
+
+	public function markAllTimesheetPaidFor($staffid,$xtn,$date)
+	{
+		return $this->p_update("update timesheet set timesheet_processed = 1 , timesheet_payxtn = ?, timesheet_paid_date = ? where timesheet_staff = ? and timesheet_processed = 0" , "isi", $xtn,$date,$staffid);
+	}
+
+	public function allStaffReceivedPay()
+	{
+		$ret = array();
+		$r = $this->p_query("select timesheet_staff from timesheet left join staff on idstaff = timesheet_staff where timesheet_processed = 1 group by timesheet_staff order by staff_name",null,null);
+		if ($r)
+		{
+			while ($rec = $r->fetch_assoc())
+			{
+				$ret[] = $this->o_getStaff(intval($rec["timesheet_staff"]));
+			}
+		}
+		return $ret;
+	}
+
+	public function getTimeSheetsForXtn($xtn,$stafffid)
+	{
+		$ret = array();
+		$r = $this->p_query("select * from timesheet where timesheet_payxtn = ? and timesheet_staff = ? order by timesheet_date", "ii", $xtn, $stafffid);
+		if ($r)
+		{
+			while ($o = $r->fetch_object("timesheet"))
+				$ret[] = $o;
+		}
+		return $ret;
 	}
 
 	//*********************************************************************
@@ -1208,6 +1589,11 @@ class stateraDB extends SQLPlus
 	public function o_getJournal($id)
 	{
 		return $this->o_singlequery("journal", "select * from journal left join chart on chart_code = journal_chart where idjournal = ?", "i", $id);
+	}
+
+	public function o_journalGetTransactionForCOA($xtn,$coa)
+	{
+		return $this->o_singlequery("journal", "select * from journal left join chart on chart_code = journal_chart where journal_xtn = ? and journal_chart = ?", "ii", $xtn,$coa);
 	}
 
 	public function allJournal($where="",$order="")
@@ -1253,6 +1639,10 @@ class stateraDB extends SQLPlus
 		return null;
 	}
 
+	public function getJournalStartAndEndDates()
+	{
+		return  [$this->getJournalFirstDate(), $this->getJournalLastDate()];
+	}
 
 	public function createJournalStartEOYRecord(DateTime $d)
 	{
@@ -1276,6 +1666,62 @@ class stateraDB extends SQLPlus
 	{
 		$strDate = $d->format("Y-m-d H:i:s");
 		return $this->p_singlequery("select * from journal where journal_date = ? and journal_marker = 'endeoy'","s",$strDate);
+	}
+
+
+	public function FindCashTransaction(DateTime $d,$amt)
+	{
+		$cnt = 0;
+		$strDate = $d->format("Y-m-d");
+		$amt = floatval($amt);
+
+		$r = $this->p_query("select journal_date, journal_folio, sum(journal_gross) as GROSS from journal where journal_chart = 100 and journal_date = ? group by journal_date, journal_folio","s", $strDate);
+		if ($r && $r->num_rows > 0)
+		{
+			while ($a = $r->fetch_assoc() )
+			{
+				if ($a["GROSS"] == $amt)
+				{
+					$cnt++;
+				}
+			}
+			return $cnt;
+		}
+		return 0;
+	}
+
+	public function FindCashTransactionNear(DateTime $d, $amt)
+	{
+		$cnt = 0;
+		$a = array();
+
+		$d1 = clone $d;
+		$d2 = clone $d;
+
+		$d1 = $d1->sub(new DateInterval('P4D'));
+		$d2 = $d2->add(new DateInterval('P4D'));
+
+		$strDate1 = $d1->format("Y-m-d");
+		$strDate2 = $d2->format("Y-m-d");
+		$amt = floatval($amt);
+		$r = $this->p_query("select journal_date, journal_folio, sum(journal_gross) as GROSS from journal where journal_chart = 100 and journal_date >= ? and journal_date <= ?  group by journal_date, journal_folio", "ss", $strDate1, $strDate2);
+		//$r = $this->p_query("select * from journal where journal_chart = 100 and journal_date >= ? and journal_date <= ? and journal_gross = ?", "ssd", $strDate1,$strDate2 ,$amt);
+		if ($r and $r->num_rows > 0)
+		{
+			while ($a = $r->fetch_assoc() )
+			{
+				if ($a["GROSS"] == $amt)
+				{
+					$save = $a;
+					$cnt++;
+				}
+			}
+			if ($cnt == 1)
+			{
+				return $save;
+			}
+		}
+		return NULL;
 	}
 
 	public function createPair($rec,$coa1,$coa2,$source=0,$enterTransaction=true)
@@ -1609,6 +2055,116 @@ class stateraDB extends SQLPlus
 
 	}
 
+	public function ReceivedInterest($date,$amount,$description)
+	{
+		$coa1 = ($this->getChartFor('cash', null, null, SEARCH_FIRST))->chart_code;
+		$coa2 = ($this->getChartFor('income', "financial", "interest", SEARCH_ONEONLY))->chart_code;
+
+		$rec = array();
+		$rec['journal_date'] = $date;
+		$rec['journal_description'] = $description;
+		$rec['journal_net'] = $amount;
+		$rec['journal_tax'] = 0.00;
+		$rec['journal_gross'] = $amount;
+		$rec['journal_folio'] = ($this->getLastFolio() + 1);
+
+		$this->BeginTransaction();
+
+		$xtn = $this->createPair($rec, $coa1, $coa2, 0, false);
+		if (!$xtn)
+			$this->TransactionError();
+
+		$this->EndTransaction();
+
+		return $xtn;
+
+	}
+
+	public function allLoanTransactionsFor($coa)
+	{
+		return $this->p_query("select * from journal where journal_chart = ? order by journal_date", "i", $coa);
+	}
+
+	public function loanTransactions()
+	{
+		$ret = array();
+		$ret["chart_descriptions"] = $this->everyChartDescription();
+		$ret["chart_types"] = $this->everyChartType();
+		$ret["loans"] = array();;
+
+		$allCharts = $this->everyChartLoan();
+		foreach ($allCharts as $chart)
+		{
+			$coa = $chart["chart_code"];
+			$ret["loans"] [$coa] = array();
+			$ret["loans"] [$coa]["xtns"] = array();
+			$ret["loans"] [$coa]["desc"] = $chart["chart_description"];
+
+			$r = $this->allLoanTransactionsFor($coa);
+			while ($j = $r->fetch_assoc())
+			{
+				$a = $this->getJournalPair($j["idjournal"]);
+				$a[0]->other_chart = $a[1]->journal_chart;
+				$ret["loans"] [$coa]["xtns"] [] = $a[0];
+			}
+		}
+		return $ret;
+	}
+
+	public function allWagesForStaff($staffid)
+	{
+		$coa = ($this->getChartFor("expense", "cost of sale", "wages"))->chart_code;
+		$r = $this->p_query("select * from journal where journal_chart =  ? and journal_staff = ? and journal_wage_tax is not null", "ii", $coa, $staffid);
+		return $r->fetch_all(MYSQLI_ASSOC);
+	}
+
+	public function wagesForPeriod($staffid, $dateFrom, $dateTo)
+	{
+		$sum_net = 0;
+		$sum_tax = 0;
+		$sum_ks_employee = 0;
+		$sum_ks_employer = 0;
+		$sum_ks_esct = 0;
+		$coa = ($this->getChartFor("expense", "cost of sale", "wages"))->chart_code;
+		$r = $this->p_query("select * from journal where journal_chart =  ? and journal_staff = ? and journal_date >= ? and journal_date <= ? and journal_wage_tax is not null", "iiss", $coa, $staffid, $dateFrom, $dateTo);
+		while ($j = $r->fetch_assoc())
+		{
+			$sum_net += $j["journal_gross"];
+			$sum_tax += $j["journal_wage_tax"];
+			$sum_ks_employee += $j["journal_kiwisaver_employee"];
+			$sum_ks_employer += $j["journal_kiwisaver_employer"];
+			$sum_ks_esct += $j["journal_kiwisaver_esct_tax"];
+
+		}
+		return ["net" => $sum_net, "tax" => $sum_tax, "gross" => ($sum_net+$sum_tax),"ks_employee" => $sum_ks_employee,"ks_employer" => $sum_ks_employer, "ks_tax" => $sum_ks_esct];
+	}
+
+	public function everyPayRun()
+	{
+		$ret = array();
+		$coa = ($this->getChartFor("expense","cost of sale","wages"))->chart_code;
+		$r = $this->p_query("select journal_date, count(*) as CNT from journal where journal_chart = ? and journal_wage_tax is not null group by journal_date", "i", $coa);
+		if ($r)
+		{
+			while ($rec = $r->fetch_assoc())
+				$ret[] = $rec;
+		}
+		return $ret;
+	}
+
+	public function o_allJournalsForPayRun($date)
+	{
+		$ret = array();
+		$coa = ($this->getChartFor("expense", "cost of sale", "wages"))->chart_code;
+		$r = $this->p_query("select * from journal where journal_chart = ? and journal_wage_tax is not null and journal_date = ?", "is", $coa, $date);
+		if ($r)
+		{
+			while ($o = $r->fetch_object("journal"))
+				$ret[] = $o;
+		}
+		return $ret;
+	}
+
 	public function journalInvoiceOutstanding($invoiceid)
 	{
 		//Looks at the jouranl to determine howm much is outsanding on an invoice
@@ -1639,11 +2195,17 @@ class stateraDB extends SQLPlus
 		}
 	}
 
-	public function payAccountsPayable($xtn,$amount)
+	public function payAccountsPayable($xtn,$amount,$date)
 	{
 		$rec = $this->getAccountPayable($xtn);
 		if ($rec)
 		{
+
+			$j2 = $this->o_getJournal($rec["journal_link"]);
+
+			$rec["journal_date"] = $date;
+			$rec["journal_source_chart"] = $j2->journal_chart;
+
 			$chart2 = $rec["journal_chart"];
 			unset($rec["idjournal"]);
 			unset($rec["journal_xtn"]);
@@ -1659,9 +2221,38 @@ class stateraDB extends SQLPlus
 		return null;
 	}
 
+	public function payAccountsPayableCombined($xtn, $amount, $date, $description, $folio)
+	{
+		$rec = $this->getAccountPayable($xtn);
+		if ($rec)
+		{
+			$j2 = $this->o_getJournal($rec["journal_link"]);
+
+			$rec["journal_date"] = $date;
+			$rec["journal_source_chart"] = $j2->journal_chart;
+
+			$chart2 = $rec["journal_chart"];
+			unset($rec["idjournal"]);
+			unset($rec["journal_xtn"]);
+			unset($rec["journal_link"]);
+			unset($rec["journal_chart"]);
+			$rec["journal_description"] = $description;
+			$rec["journal_folio"] = $folio;
+
+			$c = $this->getChartFor('cash',null,null,SEARCH_FIRST);
+			if (! $c)
+				throw (new Exception("Unable to find chart for current asset/accounts receivable"));
+			$chart1 = $c->chart_code;
+			return $this->createPair($rec,$chart1,$chart2,$xtn);
+		}
+		return null;
+	}
+
 	public function everyAccountsPayable()
 	{
-		$r = $this->p_query("select * from journal left join chart on chart_code = journal_chart where chart_type = 'current liability' and chart_subtype = 'accounts payable' and journal_gross < 0 order by journal_date",null,null);
+		$ret = array();
+		$q = "select * from journal left join chart on chart_code = journal_chart where chart_type = 'current liability' and chart_subtype = 'accounts payable' and journal_gross < 0 order by journal_date";
+		$r = $this->p_query($q,null,null);
 		if (!$r) {$this->sqlError($q); return null;}
 		if ($r->num_rows > 0)
 		{
@@ -1670,10 +2261,10 @@ class stateraDB extends SQLPlus
 			{
 				$match = $this->p_singlequery("select sum(journal_gross) as GROSS from journal left join chart on chart_code = journal_chart where chart_type = 'current liability' and chart_subtype = 'accounts payable' and journal_gross > 0 and journal_source = {$list[$idx] ['journal_source']}",null,null);
 				$list[$idx] ["journal_gross"] = $list[$idx] ["journal_gross"] + $match["GROSS"];
-				if ( $list[$idx] ["journal_gross"]  == 0.0)
-					unset($list[$idx]);
+				if ($list[$idx]["journal_gross"] != 0.0)
+					$ret[] = $list[$idx];
 			}
-			return $list;
+			return $ret;
 		}
 		return null;
 	}
@@ -1690,7 +2281,9 @@ class stateraDB extends SQLPlus
 
 	public function everyAccountsReceivable()
 	{
-		$r = $this->p_query("select * from journal left join chart on chart_code = journal_chart where chart_type = 'current asset' and chart_subtype = 'accounts receivable' and journal_gross > 0 order by journal_date",null,null);
+		$ret = array();
+		$q = "select * from journal left join chart on chart_code = journal_chart where chart_type = 'current asset' and chart_subtype = 'accounts receivable' and journal_gross > 0 order by journal_date";
+		$r = $this->p_query($q,null,null);
 		if (!$r) {$this->sqlError($q); return null;}
 		if ($r->num_rows > 0)
 		{
@@ -1699,13 +2292,12 @@ class stateraDB extends SQLPlus
 			{
 				$match = $this->p_singlequery("select sum(journal_gross) as GROSS from journal left join chart on chart_code = journal_chart where chart_type = 'current asset' and chart_subtype = 'accounts receivable' and journal_gross < 0 and journal_source = {$list[$idx] ['journal_source']}",null,null);
 				$list[$idx] ["journal_gross"] = $list[$idx] ["journal_gross"] + $match["GROSS"];
-				if ( $list[$idx] ["journal_gross"]  == 0.0)
-					unset($list[$idx]);
+				if ($list[$idx]["journal_gross"] != 0.0)
+					$ret[] = $list[$idx];
 			}
-			return $list;
+			return $ret;
 		}
 		return null;
-
 	}
 
 	public function everyAssetJournals($assetid)
@@ -1749,11 +2341,74 @@ class stateraDB extends SQLPlus
 		return null;
 	}
 
-	public function payAccountsReceivable($xtn,$amount)
+	public function payAccountsReceivable($xtn,$amount,$date)
 	{
+		//We may need to calculate slaes tax
+		$company = $this->getCompany();
+		$taxclass = $this->getTaxClassByName($company->company_sales_tax_name->raw());
 		$rec = $this->getAccountReceivable($xtn);
 		if ($rec)
 		{
+			$salestaxrate = ($this->getTaxRateForClassAndDate($taxclass->idtaxclass, $rec["journal_date"]))->taxrate_rate;
+
+			$j2 = $this->o_getJournal($rec["journal_link"]);
+
+			$this->BeginTransaction();
+
+			if ($amount != $rec["journal_gross"])
+			{
+				if ($amount < $rec["journal_gross"])
+				{
+					$rec["journal_gross"] = $amount;
+					if ($rec["journal_tax"] != 0.00)
+					{
+						$rec["journal_net"] = round($rec["journal_gross"] / (1.00 + $salestaxrate), 2);
+						$rec["journal_tax"] = $rec["journal_gross"] - $rec["journal_net"];
+					}
+					else
+					{
+						$rec["journal_net"] = $amount;
+						$rec["journal_tax"] = 0.00;
+					}
+				}
+
+				if ($amount > $rec["journal_gross"])
+				{
+					$rec2 = $rec;
+					$rec2["journal_gross"] = $amount - $rec["journal_gross"];
+					if ($rec["journal_tax"] != 0.00)
+					{
+						$rec2["journal_net"] = round($rec2["journal_gross"] / (1.00 + $salestaxrate), 2);
+						$rec2["journal_tax"] =  $rec2["journal_gross"] - $rec2["journal_net"];
+					}
+					else
+					{
+						$rec2["journal_net"] = $rec2["journal_gross"];
+						$rec2["journal_tax"] = 0.00;
+					}
+
+					//Now we create a new transaction
+					$rec2["journal_date"] = $date;
+					$rec2["journal_source_chart"] = $j2->journal_chart;
+					unset($rec2["idjournal"]);
+					unset($rec2["journal_xtn"]);
+					unset($rec2["journal_link"]);
+					unset($rec2["journal_chart"]);
+
+					$c = $this->getChartFor('cash',null,null,SEARCH_FIRST);
+					$chart1 = $c->chart_code;
+					$c = $this->getChartFor('current liability','customer credits',null,SEARCH_FIRST);
+					$chart2 = $c->chart_code;
+					$this->createPair($rec2,$chart1,$chart2,$xtn,false);
+
+				}
+
+			}
+
+
+			$rec["journal_date"] = $date;
+			$rec["journal_source_chart"] = $j2->journal_chart;
+
 			$chart2 = $rec["journal_chart"];
 			unset($rec["idjournal"]);
 			unset($rec["journal_xtn"]);
@@ -1764,7 +2419,10 @@ class stateraDB extends SQLPlus
 			if (! $c)
 				throw (new Exception("Unable to find chart for current asset/accounts receivable"));
 			$chart1 = $c->chart_code;
-			return $this->createPair($rec,$chart1,$chart2,$xtn);
+			$this->createPair($rec,$chart1,$chart2,$xtn,false);
+
+			return $this->EndTransaction();
+
 		}
 		return null;
 	}
@@ -1789,8 +2447,17 @@ class stateraDB extends SQLPlus
 		$ret = "";
 		$r = $this->p_query("select journal_description from journal left join chart on chart_code = journal_chart where journal_folio = ? and chart_type = 'cash'","i",$folio);
 		$recs = $r->fetch_all(MYSQLI_ASSOC);
-		foreach($recs as $rec)
-			$ret .= htmlspecialchars($rec["journal_description"]) . "\n";
+		foreach ($recs as $rec)
+		{
+			$desc = htmlspecialchars($rec["journal_description"]);
+			if (strlen($ret) == 0)
+				$ret = $desc;
+			else
+			{
+				if ($ret != $desc) //Same description
+					$ret .= "\n" . htmlspecialchars($rec["journal_description"]);
+			}
+		}
 		return trim($ret,"\n");
 	}
 
@@ -1853,11 +2520,15 @@ class stateraDB extends SQLPlus
 		return $ret;
 	}
 
-	public function PaySalesTax($strdate,$amount,$roundoff,$taxname,$taxdate)
+	public function PaySalesTax($strdate,$amount,$roundoff,$taxname,$taxdate,$usefolio=0)
 	{
-		//Get last folio
-		$folio = $this->getLastFolio() + 1;
+		//Get last folio if usefolio not passed.
+		//If $usefolio is passed then this is a combined slaes tax bank transaction for multiple tax payments.
 
+		if ($usefolio == 0)
+			$folio = $this->getLastFolio() + 1;
+		else
+			$folio = $usefolio;
 		$rec = array();
 		$v = $amount + $roundoff;
 		$rec['journal_date'] = $strdate;
@@ -1865,7 +2536,10 @@ class stateraDB extends SQLPlus
 		$rec['journal_net'] = -$v;
 		$rec['journal_tax'] = 0;
 		$rec['journal_gross'] = -$v;
-		$rec['journal_description'] = "{$taxname} Paid";
+		if ($v < 0)
+			$rec['journal_description'] = "{$taxname} Refund";
+		else
+			$rec['journal_description'] = "{$taxname} Paid";
 		$rec['journal_tax_date'] = $taxdate;
 
 		$c = $this->getChartFor('cash',null,null,SEARCH_FIRST);
@@ -1882,7 +2556,7 @@ class stateraDB extends SQLPlus
 
 		$xtn1 = $this->createPair($rec,$chart1,$chart2,0,false);
 		$xtn2 = null;
-		if ($roundoff > 0)
+		if (abs($roundoff) > 0.00)
 		{
 			$rec = array();
 			$rec['journal_date'] = $strdate;
@@ -1893,7 +2567,7 @@ class stateraDB extends SQLPlus
 			$rec['journal_description'] = "{$taxname} Paid Roundoff";
 			$rec['journal_tax_date'] = $taxdate;
 
-			$c = $this->getChartFor('expense','GST Tax rounding',null,SEARCH_FIRST);
+			$c = $this->getChartFor('expense','operating','GST Tax rounding',SEARCH_FIRST);
 			if (! $c)
 				throw (new Exception("Unable to find chart for expense/{$taxname}"));
 			$chart3 = $c->chart_code;
@@ -1959,7 +2633,7 @@ class stateraDB extends SQLPlus
 		$detail[] = ["line" => 7,"name"=>"SUBTRACT BOX 6 FROM 5","value" => $lines[7] ];
 
 		$lines[8] = round(($lines[7] * $rate) / (1+$rate),2);
-		$detail[] = ["line" => 8,"name"=>"GST ON INCOME","value" => $lines[8] ];
+		$detail[] = ["line" => 8,"name"=>"GST ON INCOME", "value" => $lines[8] ];
 
 		$lines[9] = 0.0;
 		$detail[] = ["line" => 9,"name"=>"ADJUSTMENTS","value" => $lines[9] ];
@@ -1969,24 +2643,24 @@ class stateraDB extends SQLPlus
 
 
 		//Total Purchases
-		$j = $this->p_singlequery("select sum(journal_gross) as GROSS from journal left join chart a on a.chart_code = journal_chart left join chart b on b.chart_code = journal_source_chart where journal_date >= ? and journal_date <= ? and a.chart_type = 'cash' and a.chart_subtype = 'bank' and (b.chart_type= 'expense' or b.chart_type= 'asset') and b.chart_taxclass is not null","ss",$from,$to);
+		$j = $this->p_singlequery("select sum(journal_gross) as GROSS from journal left join chart a on a.chart_code = journal_chart left join chart b on b.chart_code = journal_source_chart where journal_date >= ? and journal_date <= ? and a.chart_type = 'cash' and a.chart_subtype = 'bank' and (b.chart_type= 'expense' or b.chart_type= 'asset') and b.chart_taxclass is not null and journal_tax <> 0", "ss", $from, $to);
 		$lines[11] = -$j["GROSS"];
-		$detail[] = ["line" => 11,"name"=>"TOTAL PURCHASES","value" => $lines[11] ];
+		$detail[] = ["line" => 11, "name" => "TOTAL PURCHASES", "value" => $lines[11]];
 
-		$lines[12] = round(($lines[11] * $rate) / (1+$rate),2);
-		$detail[] = ["line" => 12,"name"=>"GST ON PURCHASES","value" => $lines[12] ];
+		$lines[12] = round(($lines[11] * $rate) / (1 + $rate), 2);
+		$detail[] = ["line" => 12, "name" => "GST ON PURCHASES", "value" => $lines[12]];
 
 		$lines[13] = 0.00;
-		$detail[] = ["line" => 12,"name"=>"CREDIT ADJUSTMENTS","value" => $lines[13] ];
+		$detail[] = ["line" => 12, "name" => "CREDIT ADJUSTMENTS", "value" => $lines[13]];
 
-		$lines[14] =$lines[12];
-		$detail[] = ["line" => 14,"name"=>"GST CREDIT","value" => $lines[14] ];
+		$lines[14] = $lines[12];
+		$detail[] = ["line" => 14, "name" => "GST CREDIT", "value" => $lines[14]];
 
 		$lines[15] = $lines[10] - $lines[14];
 		$suffix = "TO PAY";
 		if ($lines[15] < 0)
 			$suffix = "REFUND";
-		$detail[] = ["line" => 15,"name"=>"DIFFERENCE BETWEEN BOX 10 AND 14","value" => abs($lines[15]) ,"suffix" => $suffix];
+		$detail[] = ["line" => 15, "name" =>"DIFFERENCE BETWEEN BOX 10 AND 14","value" => abs($lines[15]) ,"suffix" => $suffix];
 
 		//Corss check the journal
 		$j = $this->p_singlequery("select sum(journal_tax) as TAX from journal left join chart a on a.chart_code = journal_chart where journal_date >= ? and journal_date <= ? and a.chart_type = 'cash' and a.chart_subtype = 'bank'","ss",$from,$to);
@@ -1994,7 +2668,7 @@ class stateraDB extends SQLPlus
 		$detail[] = ["line" => 16,"name"=>"Cross check journal","value" => $lines[16]];
 
 		$lines[17] = $lines[16] - $lines[15];
-		$detail[] = ["line" => 17,"name"=>"Round off error","value" => $lines[17] ];
+		$detail[] = ["line" => 17, "name"=>"Round off error","value" => $lines[17] ];
 
 		$ret["lines"] = $lines;
 		$ret["detail"] = $detail;
@@ -2003,8 +2677,151 @@ class stateraDB extends SQLPlus
 		return  $ret;
 	}
 
+	public function cashBalanceAt($date)
+	{
+		$cashbalance = array();
+		$r = $this->p_query("select chart_code,chart_description, sum(journal_gross) as GROSS from journal left join chart on chart_code = journal_chart where chart_type = 'cash' and journal_date <= ? group by chart_code,chart_description","s",$date);
+		while ($j = $r->fetch_assoc())
+		{
+			$code = $j['chart_code'];
+			if (!isset($cashbalance[$code]))
+				$cashbalance[$code] = array();
+			$cashbalance[$code]["name"] = $j['chart_description'];
+			$cashbalance[$code]["end"]["gross"] = $j['GROSS'];
+		}
+		return $cashbalance;
+	}
+
+	public function loanBalacneAt($date)
+	{
+		$loanbalance = array();
+		$r = $this->p_query("select chart_code,chart_description, sum(journal_gross) as GROSS from journal left join chart on chart_code = journal_chart where chart_type = 'non current liability' and chart_subtype = 'loan' and journal_date <= ? group by chart_code,chart_description","s",$date);
+		while ($j = $r->fetch_assoc())
+		{
+			$code = $j['chart_code'];
+			if (!isset($loanbalance[$code]))
+				$loanbalance[$code] = array();
+			$loanbalance[$code]["name"] = $j['chart_description'];
+			$loanbalance[$code]["end"]["gross"] = $j['GROSS'];
+		}
+		return $loanbalance;
+	}
+
+	public function cashFlow($from,$to)
+	{
+		$rslt = array();
+		$rslt["cr"] = array();
+		$rslt["dr"] = array();
+
+		$range = array();
+
+		$r = $this->p_query("select * from journal left join chart on chart_code = journal_chart where chart_type = 'cash' and journal_date >= ? and journal_date <= ? ", "ss", $from,$to);
+		if ($r)
+		{
+			while ($j1 = $r->fetch_object("journal"))
+			{
+				//Find macthing record
+				$j2 = $this->o_getJournal($j1->journal_link);
+
+				$month = (new DateTime($j1->journal_date))->format("Ym");
+				$range[$month] = (new DateTime($j1->journal_date))->format("M Y");
+
+				$type = $j2->chart_type->raw();
+				$subtype = $j2->chart_subtype->raw();
+
+				$crdr = ($j1->journal_gross > 0) ? "cr" : "dr";
+
+				if ($type == "current liability" && $subtype = "accounts payable")
+				{
+					//We need to get the orginal record
+					$newchart = $this->getChart($j2->journal_source_chart);
+					$type = $newchart->chart_type->raw();
+					$subtype = $newchart->chart_subtype->raw();
+				}
+
+				if ($type == "current asset" && $subtype = "accounts receivable")
+				{
+					//We need to get the orginal record
+					$newchart = $this->getChart($j2->journal_source_chart);
+					$type = $newchart->chart_type->raw();
+					$subtype = $newchart->chart_subtype->raw();
+				}
+
+
+				if (!isset($rslt [$crdr] [$type]))
+					$rslt [$crdr] [$type] = array();
+				if (!isset($rslt[$crdr][$type][$subtype]))
+					$rslt[$crdr][$type][$subtype] = array();
+				if (!isset($rslt[$crdr][$type][$subtype][$month]))
+					$rslt[$crdr][$type][$subtype][$month] = 0.0;
+				$rslt [$crdr] [$type] [$subtype][$month] += $j1->journal_gross;
+			}
+		}
+
+		//Sort the range
+		ksort($range);
+		return ["data" => $rslt, "range" => $range];
+	}
+
+	public function retainedFunds($from,$to)
+	{
+		$v = 0.0;
+		$net = 0.0;
+
+		//Income
+		$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'income' group by chart_code, chart_description,chart_type, chart_subtype", "ss", $from, $to);
+		while ($j = $r->fetch_assoc())
+		{
+			$v += $j['NET'];
+			$net += $j['NET'];
+		}
+		error_log("Income for {$from} {$to} {$v}");
+		$v = 0.0;
+
+		//Cost of sale
+		$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'expense' and chart_subtype = 'cost of sale' group by chart_code, chart_description,chart_type, chart_subtype", "ss", $from, $to);
+		while ($j = $r->fetch_assoc())
+		{
+			$code = $j['chart_code'];
+			if (!isset($costofsale[$code]))
+				$costofsale[$code] = array();
+			$costofsale[$code]["name"] = $j['chart_description'];
+			$v += $j['NET'];
+			$net += $j['NET'];
+		}
+
+		error_log("Cost of sale {$from} {$to} {$v}");
+		$v = 0.0;
+
+
+		//Operating Expenditure
+		$expenditure = array();
+		$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'expense' and chart_subtype = 'operating' group by chart_code, chart_description,chart_type, chart_subtype", "ss", $from, $to);
+		while ($j = $r->fetch_assoc())
+		{
+			$v += $j['NET'];
+			$net += $j['NET'];
+		}
+		error_log("Operating expenditure {$from} {$to} {$v}");
+		$v = 0.0;
+
+
+		//Financial expenditiure
+		$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'expense' and chart_subtype = 'financial' group by chart_code, chart_description,chart_type, chart_subtype", "ss", $from, $to);
+		while ($j = $r->fetch_assoc())
+		{
+			$v += $j['NET'];
+			$net += $j['NET'];
+		}
+		error_log("Financial expenditiure {$from} {$to} {$v}");
+
+		return -($net);
+	}
+
 	public function financialreport($from,$to)
 	{
+		//From and to are strings
+
 		$company = $this->getCompany();
 		$salestaxname = $company->company_sales_tax_name->raw();
 		$ret = array();
@@ -2053,10 +2870,10 @@ class stateraDB extends SQLPlus
 			$cashReceived[$code] ["gross"] = $j['GROSS'];
 		}
 
-		$ret["cash"] ["received"] = $cashReceived;
+		$ret["cash"]["received"] = $cashReceived;
 
 		//Cash spent
-		$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype,sum(journal_gross) as GROSS from journal left join chart on chart_code = journal_chart where journal_date >= ? and journal_date <= ? and chart_type = 'cash' and journal_gross < 0.00 group by chart_code ","ss",$from,$to);
+		$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype,sum(journal_gross) as GROSS from journal left join chart on chart_code = journal_chart where journal_date >= ? and journal_date <= ? and chart_type = 'cash' and journal_gross < 0.00 group by chart_code ", "ss", $from, $to);
 		//$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, j.journal_chart AS LINK_CHART, sum(k.journal_gross) as GROSS from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'cash' and k.journal_gross < 0.00 group by chart_code, chart_description,chart_type, chart_subtype, j.journal_chart","ss",$from,$to);
 		$cashSpent = array();
 
@@ -2075,7 +2892,7 @@ class stateraDB extends SQLPlus
 		 * INCOME
 		*/
 		$income = array();
-		$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'income' group by chart_code, chart_description,chart_type, chart_subtype","ss",$from,$to);
+		$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'income' and chart_subtype = 'sale' group by chart_code, chart_description,chart_type, chart_subtype","ss",$from,$to);
 		while ($j = $r->fetch_assoc())
 		{
 			$code = $j['chart_code'];
@@ -2085,12 +2902,35 @@ class stateraDB extends SQLPlus
 			$income[$code] ["net"] = $j['NET'];
 		}
 
-		$ret["income"] = $income;
+
+		$ret["income"] ["sale"] = $income;
+
+		$incomeFinancial = array();
+		$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'income' and chart_subtype = 'financial' group by chart_code, chart_description,chart_type, chart_subtype", "ss", $from, $to);
+		while ($j = $r->fetch_assoc()) {
+			$code = $j['chart_code'];
+			if (!isset($incomeFinancial[$code]))
+				$incomeFinancial[$code] = array();
+			$incomeFinancial[$code]["name"] = $j['chart_description'];
+			$incomeFinancial[$code]["net"] = $j['NET'];
+		}
+
+		$ret["income"]["financial"] = $incomeFinancial;
 
 		/***************************************************************************************************************
 		 * COST OF SALE
 		 */
 		$costofsale = array();
+		$r = $this->p_query("select chart_code, chart_description,chart_type, chart_subtype, sum(k.journal_net) as NET from journal as k left join chart on chart_code = journal_chart left join journal as j on j.idjournal = k.journal_link where k.journal_date >= ? and k.journal_date <= ? and chart_type = 'expense' and chart_subtype = 'cost of sale' group by chart_code, chart_description,chart_type, chart_subtype","ss",$from,$to);
+		while ($j = $r->fetch_assoc())
+		{
+			$code = $j['chart_code'];
+			if (!isset($costofsale[$code]))
+				$costofsale[$code] = array();
+			$costofsale[$code] ["name"] = $j['chart_description'];
+			$costofsale[$code] ["net"] = -($j['NET']);
+		}
+
 		$ret["costofsale"] = $costofsale;
 
 
@@ -2270,16 +3110,65 @@ class stateraDB extends SQLPlus
 
 	public function getJournalVendorNameList()
 	{
-		$r = $this->p_query("select journal_vendor_name, journal_vendor_tax_number from journal where journal_vendor_name IS NOT NULL group by journal_vendor_name,journal_vendor_tax_number order by journal_vendor_name, journal_vendor_tax_number",null,null);
+		$q = "select journal_vendor_name, journal_vendor_tax_number from journal where journal_vendor_name IS NOT NULL group by journal_vendor_name,journal_vendor_tax_number order by journal_vendor_name, journal_vendor_tax_number";
+		$r = $this->p_query($q,null,null);
 		if (!$r) {$this->sqlError($q); return null;}
 		if ($r->num_rows > 0)
 			return $r->fetch_all(MYSQLI_ASSOC);
 		return null;
 	}
 
+	public function custAccountBalance($accountid,$strdate)
+	{
+		$chart1 = ($this->getChartFor("cash",null,null,SEARCH_FIRST))->chart_code;
+		$chart2 = ($this->getChartFor("income","sale",null,SEARCH_ONEONLY))->chart_code;
+
+		$j = $this->p_singlequery("select sum(journal_gross) as SUM from journal where journal_date < ? and journal_account = ? and (journal_chart = ? or journal_chart = ?)", "siii", $strdate,$accountid,$chart1, $chart2);
+		if ($j["SUM"] === null)
+			return 0.00;
+		return $j["SUM"];
+	}
+
+	public function allCustomerTransaction($accountid,$startDate, $endDate)
+	{
+		$chart1 = ($this->getChartFor("cash", null, null, SEARCH_FIRST))->chart_code;
+		$chart2 = ($this->getChartFor("income", "sale", null, SEARCH_ONEONLY))->chart_code;
+
+		$ret = array();
+		$r = $this->p_query("select * from journal where journal_date >= ? and journal_date < ? and journal_account = ? and (journal_chart = ? or journal_chart = ?) order by journal_date", "ssiii", $startDate, $endDate, $accountid, $chart1, $chart2);
+		if ($r)
+		{
+			while ($o = $r->fetch_object("journal"))
+			{
+				$ret[] = $o;
+			}
+		}
+		return $ret;
+	}
+
+	public function allCustomerTransaction2($accountid, $startDate, $endDate)
+	{
+		$chart1 = ($this->getChartFor("cash", null, null, SEARCH_FIRST))->chart_code;
+		$chart2 = ($this->getChartFor("income", "sale", null, SEARCH_ONEONLY))->chart_code;
+
+		$ret = array();
+		$r = $this->p_query("select journal_date,journal_chart,journal_invoice,sum(journal_gross) as SUMGROSS from journal where journal_date >= ? and journal_date < ? and journal_account = ? and (journal_chart = ? or journal_chart = ?) group by journal_date,journal_chart,journal_invoice order by journal_date, journal_chart desc", "ssiii", $startDate, $endDate, $accountid, $chart1, $chart2);
+		if ($r) {
+			while ($o = $r->fetch_object("journal")) {
+				$ret[] = $o;
+			}
+		}
+		return $ret;
+	}
+
 	//*********************************************************************
 	//quote functions
 	//*********************************************************************
+	public function getQuoteById($id)
+	{
+		return $this->p_singlequery( "select * from quote where idquote = ?", "i", $id);
+	}
+
 	public function o_getQuoteById($id)
 	{
 		return $this->o_singlequery("quote", "select * from quote where idquote = ?", "i", $id);
@@ -2309,7 +3198,21 @@ class stateraDB extends SQLPlus
 
 	public function markQuoteAccepted($quoteid)
 	{
-		return $this->p_update("update quote set quote_status = 'accepted' where idquote = ?", "i", $quoteid);
+
+		$ts = (new DateTime())->format("Y-m-d H:i:s");
+		return $this->p_update("update quote set quote_status = 'accepted', quote_accepted_timestamp = ? where idquote = ?", "si", $ts,$quoteid);
+	}
+
+	public function markQuoteCompleted($quoteid)
+	{
+		$ts = (new DateTime())->format("Y-m-d H:i:s");
+		return $this->p_update("update quote set quote_status = 'completed', quote_completed_timestamp = ? where idquote = ?", "si", $ts,$quoteid);
+	}
+
+	public function markQuoteDeclined($quoteid)
+	{
+		$ts = (new DateTime())->format("Y-m-d H:i:s");
+		return $this->p_update("update quote set quote_status = 'declined', quote_declined_timestamp = ? where idquote = ?", "si", $ts,$quoteid);
 	}
 
 	public function o_everyQuoteLine($quoteid)
@@ -2352,6 +3255,56 @@ class stateraDB extends SQLPlus
 		return $this->p_query("select * from quote where quote_deleted = 0 and quote_status = 'accepted' and quote_customer_account IS NOT null order by quote_number desc", null, null);
 	}
 
+	public function deleteAllQuoteLinesForQuote($id)
+	{
+		return $this->p_delete("delete from quote_line where quote_line_quote =  ?", "i", $id);
+	}
+
+	public function countAllAcceptedQuotes()
+	{
+		$r = $this->p_query("select count(*) as CNT from quote where quote_status = 'accepted'", null, null);
+		if ($r) {
+			$s = $r->fetch_assoc();
+			return intval($s["CNT"]);
+		}
+		return 0;
+	}
+
+	public function netSumAllAcceptedQuotes()
+	{
+		$r = $this->p_query("select sum(quote_line_cost) as SUM from quote_line left join quote on idquote = quote_line_quote where quote_status = 'accepted'", null, null);
+		if ($r)
+		{
+			$s = $r->fetch_assoc();
+			return floatval($s["SUM"]);
+		}
+		return 0.00;
+	}
+
+	//*********************************************************************
+	//quote_request functions
+	//*********************************************************************
+	public function createQuoteRequest($name,$phone,$addr1,$addr2,$addr3,$addr4)
+	{
+		$strDate = (new DateTime())->format("Y-m-d");
+		$r = $this->p_create("insert into quote_request (quote_request_date,quote_request_name,quote_request_phone,quote_request_addreess1,quote_request_addreess2,quote_request_addreess3,quote_request_addreess4) values (?,?,?,?,?,?,?)", "sssssss", $strDate,$name, $phone, $addr1, $addr2, $addr3, $addr4);
+		if ($r)
+			return $this->insert_id;
+		return false;
+	}
+
+	public function LastQuoteRequests()
+	{
+		$ret = array();
+		$r = $this->p_query("select * from quote_request order by idquote_request desc limit 100", null, null);
+		if($r)
+		{
+			while ($o = $r->fetch_object("quote_request"))
+				$ret[] = $o;
+		}
+		return $ret;
+	}
+
 	//*********************************************************************
 	//shareholder functions
 	//*********************************************************************
@@ -2377,6 +3330,14 @@ class stateraDB extends SQLPlus
 			return $this->p_create("insert into audit (audit_type,audit_description,audit_user) value (?,?,?)","ssi",$type,$description,$userid);
 		else
 			return $this->p_create("insert into audit (audit_type,audit_description) value (?,?)","ss",$type,$description);
+	}
+
+	public function allAudits($limit=null)
+	{
+		if ($limit === null)
+			return $this->p_query("select * from audit left join user on iduser = audit_user order by audit_timestamp desc",null,null);
+		else
+			return $this->p_query("select * from audit left join user on iduser = audit_user order by audit_timestamp desc limit {$limit}", null, null);
 	}
 
 	public function allAuditsByType($type)

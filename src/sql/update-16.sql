@@ -1,0 +1,10 @@
+update journal set journal_source_chart = 985 where idjournal = 117;
+update journal set journal_source_chart = 985 where idjournal = 118;
+update journal set journal_source_chart = 985 where idjournal = 119;
+update journal set journal_source_chart = 985 where idjournal = 120;
+update journal set journal_source_chart = 985 where idjournal = 121;
+update journal set journal_source_chart = 985 where idjournal = 122;
+update journal set journal_source_chart = 985 where idjournal = 123;
+update journal set journal_source_chart = 985 where idjournal = 124;
+update journal set journal_source_chart = 985 where idjournal = 137;
+update journal set journal_source_chart = 985 where idjournal = 138;

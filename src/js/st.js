@@ -44,6 +44,13 @@ var st = {
 			n.removeChild(n.firstChild);
 		}
 	},
+	//format
+	pad: function (v, l) {
+		var s = v + "";
+		while (s.length < l) s = "0" + s;
+		return s;
+	},
+
 	//table
 	trow: function (tbl, ...a) {
 		let tr = st.cea("TR", tbl)
@@ -63,10 +70,34 @@ var st = {
 			td.className = "td" + i++;
 		}
 	},
+
 	//acounting
-	parseCurrency(s) {
+	parseCurrency: function(s) {
 		let v = s.replace("$", "");
 		v = v.replace(",", "");
-		return parseFloat(v).toFixed(2);
-    }
+		return parseFloat(parseFloat(v).toFixed(2));
+	},
+	getCurrency: function(v) {
+		let neg = false;
+		if (typeof v == "string" && v.length == 0)
+			return 0.0;
+		v = v.trim();
+		v = v.replace("$", "");
+		v = v.replace(",", "");
+		if (v.substr(0, 1) == "(") {
+			v = v.replace("(", "");
+			v = v.replace(")", "");
+			neg = true;
+		}
+		return (neg) ? -(parseFloat(v)) : parseFloat(v);
+	},
+	format_currency: function(v) {
+		let neg = (v < 0) ? true : false;
+		v = Math.abs(v);
+		v = (Math.round(v * 100) / 100).toFixed(2);
+		let r = (neg) ? "(" : "";
+		r += "$" + v;
+		r += (neg) ? ")" : "";
+		return r;
+	}
 }

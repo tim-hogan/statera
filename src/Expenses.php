@@ -17,6 +17,20 @@ function var_error_log( $object=null , $text='')
 
 require dirname(__FILE__) . "/includes/commonSession.php";
 
+$chart_colour = [
+		"expense" => 
+			["operating" => "#ffffff",
+			 "cost of sale" => "#efa44b"
+			],
+		"asset" =>
+			["fixed_asset" => "#5bf38d"
+			]
+	];
+
+
+
+
+
 $dtNow = new DateTime();
 $dtNow->setTimezone(new DateTimeZone($user->user_timezone->raw()));
 $company = $DB->getCompany();
@@ -227,11 +241,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		
 		
 		if (isset($_POST["change"]) )
-        {
-            $errmsg = "EDIT OF AN EXISTING EXPENSE NOT IMPLEMENTED YET";    
-        }
+		{
+			$errmsg = "EDIT OF AN EXISTING EXPENSE NOT IMPLEMENTED YET";    
+		}
 		else
-        {
+		{
 			if (isset($_POST["paid"]))
 				$xtn = $DB->expensePaid($date,$desc,$ledger,$vendname,$vendtax,0,$chart,$assetid, $attach_group_id,false);
 			elseif (isset($_POST["notpaid"]) )
@@ -239,6 +253,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
 			if ($DB->EndTransaction())
 			{
+				if (isset($_POST["paid"]))
+					$DB->createAudit("transaction", "Expense already paid: Transaction # {$xtn}", $user->iduser);
+				if (isset($_POST["notpaid"]))
+					$DB->createAudit("transaction", "Expense not yet paid: Transaction # {$xtn}", $user->iduser);
+
 				if ($fixed_asset)
 				{
 					$undo->add(new UndoAction("delete","asset","idasset",$assetid) );
@@ -251,7 +270,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 			}
 			else
 				$errmsg = "Database error creating expenses - contact support";
-        }
+		}
 	}
    
 }
@@ -335,15 +354,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		}
 	</script>
 	<script type="text/javascript">
-    window.addEventListener('keydown',function(e) {
-        if (e.keyIdentifier=='U+000A' || e.keyIdentifier=='Enter' || e.keyCode==13) {
-            if (e.target.nodeName=='INPUT' && e.target.type=='text') {
-                e.preventDefault();
+	window.addEventListener('keydown',function(e) {
+		if (e.keyIdentifier=='U+000A' || e.keyIdentifier=='Enter' || e.keyCode==13) {
+			if (e.target.nodeName=='INPUT' && e.target.type=='text') {
+				e.preventDefault();
 
-                return false;
-            }
-        }
-    }, true);
+				return false;
+			}
+		}
+	}, true);
 	</script>
 
 </head>
@@ -391,7 +410,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 							{
 								$selected = (isset($formfields["chart"]) && $formfields["chart"] == $chart["chart_code"]) ? "selected" : "";
 								$d = htmlspecialchars($chart["chart_description"]);
-								echo "<option value='{$chart["chart_code"]}' _taxclass='{$chart['taxclass_name']}' _type='{$chart['chart_type']}' {$selected}>{$d}</option>";
+								$colour = "#ffffff";
+								if (isset($chart_colour[$chart['chart_type']]) && isset($chart_colour[$chart['chart_type']] [$chart["chart_subtype"]]))
+									$colour = $chart_colour[$chart['chart_type']] [$chart["chart_subtype"]];
+								$colour = "style='background-color: {$colour};'";
+								echo "<option value='{$chart["chart_code"]}' _taxclass='{$chart['taxclass_name']}' _type='{$chart['chart_type']}' {$colour} {$selected}>{$d}</option>";
 							}
 							?>
 						</select>

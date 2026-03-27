@@ -115,6 +115,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 			$undolist->push($undo);
 			$DB->updateUndoList($user->iduser, $undolist->toJSON());           
 		}
+
+        header("Location: /");
+        exit();
 	}
 
 }

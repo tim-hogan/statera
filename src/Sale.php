@@ -31,6 +31,7 @@ $formfields = array();
 
 $company = $DB->getCompany();
 $account = null;
+$xtn = 0;
 
 if ($company)
 {
@@ -46,9 +47,13 @@ if ($company)
 	}
 }
 
+error_log("In sale [". __LINE__ ."]----- session_key = " . base64_encode($session->session_key) );
+
+
 $inputParams = null;
 if (isset($_GET["v"]))
 {
+    error_log("v = {$_GET["v"]}");
 	$inputParams = InputParam::load($_GET["v"],$session->session_key);
 }
 
@@ -64,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET")
 
 if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
-	var_error_log($_POST,"_POST");
+	var_error_log($_POST,"Sale.php _POST");
 
 	if (!$session->checkCSRF())
 	{
@@ -91,11 +96,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 						$line = array();
 						$line["desc"] = $o_line->quote_line_descripton->toHTML();
 						$line["qty"] = $o_line->quote_line_qty;
-						$line["total"] = $o_line->quote_line_cost;
-						$line["unitdesc"] = "";
+                        $line["net"] = intval($o_line->quote_line_cost * 100);
+                        $line["tax"] = intval($o_line->quote_line_cost * $salestaxrate * 100);
+                        $line["gross"] = $line["net"] + $line["tax"];
+                        $line["unitdesc"] = "";
 						$line["unit"] = "";
 						$line["prodid"] = 0;
 
+                        var_error_log($line, "line");
 						$formfields["lines"][] = $line;
 					}
 				}
@@ -113,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 			 count($_POST["desc"]) == count($_POST["qty"]) &&
 			 count($_POST["desc"]) == count($_POST["unit"]) &&
 			 count($_POST["desc"]) == count($_POST["prodid"]) &&
-			 count($_POST["desc"]) == count($_POST["total"]))
+			 count($_POST["desc"]) == count($_POST["gross"]))
 		{
 			$date = null;
 			if (isset($_POST["date"]))
@@ -150,7 +158,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 				$line["unitdesc"] = $_POST["unitdesc"] [$idx];
 				$line["unit"] = $_POST["unit"] [$idx];
 				$line["prodid"] = $_POST["prodid"] [$idx];
-				$line["total"] = $_POST["total"] [$idx];
+				$line["net"] = $_POST["net"][$idx];
+				$line["tax"] = $_POST["tax"][$idx];
+				$line["gross"] = $_POST["gross"] [$idx];
 
 				$formfields["lines"] [] = $line;
 			}
@@ -174,6 +184,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
 							//Create lines
 							$net = 0.0;
+							$sum_net = 0.0;
+							$sum_tax = 0.0;
+							$sum_gross = 0.0;
+
 							for ($idx = 0; $idx < count($_POST["desc"]);$idx++)
 							{
 								//Create an invoice lines
@@ -182,38 +196,56 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 								$qty = floatval($_POST["qty"] [$idx]);
 								$unitdesc = $_POST["unitdesc"] [$idx];
 								$unit = floatval($_POST["unit"] [$idx]);
-								if ($unit == 0 || $qty = 0)
-									$total = floatval($_POST["total"][$idx]);
-								else
-									$total = round($qty * $unit, 2);
 
-								$line = $DB->createInvoiceLine($invoice->idinvoice,$productid,$linedesc,$qty,$unitdesc,$unit,$total);
+								$net = 0.0;
+								$tax = 0.0;
+								$gross = 0.0;
+								
+								if ($unit == 0 || $qty = 0)
+								{
+									$net = floatval($_POST["net"][$idx]) / 100.0;
+									$tax = floatval($_POST["tax"][$idx]) / 100.0;
+									$gross = floatval($_POST["gross"][$idx]) / 100.0;
+								}
+								else
+								{
+									$net = round($qty * $unit, 2);
+								}
+
+								$line = $DB->createInvoiceLine($invoice->idinvoice,$productid,$linedesc,$qty,$unitdesc,$unit,$net,$tax,$gross);
+
+								$sum_net += $net;
+								$sum_tax += $tax;
+								$sum_gross += $gross;
+
 								if ($line)
 								{
 									$undo->add(new UndoAction("delete","invoice_line","idinvoice_line",$line->idinvoice_line) );
-									$net += $total;
+									//$net += $total;
 								}
 								else
 									$DB->TransactionError();
 							}
 
 							//Create cash sale hjournal entries
-							if ($account)
-							{
-								if ($account->account_sale_tax_class)
-								{
-									$tax_class_account = $DB->getTaxClass($account->account_sale_tax_class);
-									$tax = $DB->getTaxRateForClassAndDate($tax_class_account->idtaxclass,new DateTime());
-									$taxrate = 0.0;
-									if ($tax)
-										$taxrate = $tax->taxrate_rate;
-									$ledgerAmount = LedgerAmount::createFromNet($net,$taxrate);
-								}
-								else
-									$ledgerAmount = LedgerAmount::createFromNet($net,0.0);
-							}
-							else
-								$ledgerAmount = LedgerAmount::createFromNet($net,$salestaxrate);
+							$ledgerAmount = new LedgerAmount($sum_net, $sum_tax, $sum_gross);
+
+							//if ($account)
+							//{
+							//    if ($account->account_sale_tax_class)
+							//    {
+							//        $tax_class_account = $DB->getTaxClass($account->account_sale_tax_class);
+							//        $tax = $DB->getTaxRateForClassAndDate($tax_class_account->idtaxclass,new DateTime());
+							//        $taxrate = 0.0;
+							//        if ($tax)
+							//            $taxrate = $tax->taxrate_rate;
+							//        $ledgerAmount = LedgerAmount::createFromNet($net,$taxrate);
+							//    }
+							//    else
+							//        $ledgerAmount = LedgerAmount::createFromNet($net,0.0);
+							//}
+							//else
+							//    $ledgerAmount = LedgerAmount::createFromNet($net,$salestaxrate);
 							$xtn = $DB->saleCash($date,$description,$accountid,$invoice->idinvoice,$ledgerAmount,0,0,false);
 							$undo->add(new UndoAction("delete","journal","journal_xtn",$xtn) );
 
@@ -226,8 +258,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
 						if ( $DB->EndTransaction() )
 						{
-							$v = "i={$invoice->idinvoice}";
-							$s = Secure::sec_encryptParam($v,base64_encode($session->session_key));
+							$DB->createAudit("transaction", "Cash sale: Transaction # {$xtn}", $user->iduser);
+
+                            $v = "i={$invoice->idinvoice}";
+                            $s = InputParam::encryptFromString($v, $session->session_key);
 							$DB->updateUndoList($user->iduser, $undolist->toJSON());
 							header("Location: Invoice.php?v={$s}");
 							exit();
@@ -251,6 +285,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
 							//Create lines
 							$net = 0.0;
+							$sum_net = 0.0;
+							$sum_tax = 0.0;
+							$sum_gross = 0.0;
+							
 							for ($idx = 0; $idx < count($_POST["desc"]);$idx++)
 							{
 								//Create an invoice lines
@@ -259,34 +297,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 								$qty = floatval($_POST["qty"] [$idx]);
 								$unitdesc = $_POST["unitdesc"] [$idx];
 								$unit = floatval($_POST["unit"] [$idx]);
-								if ($unit == 0 || $qty = 0)
-									$total = floatval($_POST["total"][$idx]);
-								else
-									$total = round($qty * $unit,2);
+								$net = 0.0;
+								$tax = 0.0;
+								$gross = 0.0;
 
+								if ($unit == 0 || $qty = 0) {
+									$net = floatval($_POST["net"][$idx]) / 100.0;
+									$tax = floatval($_POST["tax"][$idx]) / 100.0;
+									$gross = floatval($_POST["gross"][$idx]) / 100.0;
+								} else {
+									$net = round($qty * $unit, 2);
+								}
 
-								$line = $DB->createInvoiceLine($invoice->idinvoice,$productid,$linedesc,$qty,$unitdesc,$unit,$total);
+								$line = $DB->createInvoiceLine($invoice->idinvoice, $productid, $linedesc, $qty, $unitdesc, $unit, $net, $tax, $gross);
+								$sum_net += $net;
+								$sum_tax += $tax;
+								$sum_gross += $gross;
+
 								if ($line)
 								{
 									$undo->add(new UndoAction("delete","invoice_line","idinvoice_line",$line->idinvoice_line) );
-									$net += $total;
+									//$net += $total;
 								}
 								else
 									$DB->TransactionError();
 							}
 
+							$ledgerAmount = new LedgerAmount($sum_net,$sum_tax,$sum_gross);
 							//Create account sale journal entries
-							if ($account->account_sale_tax_class)
-							{
-								$tax_class_account = $DB->getTaxClass($account->account_sale_tax_class);
-								$tax = $DB->getTaxRateForClassAndDate($tax_class_account->idtaxclass,new DateTime());
-								$taxrate = 0.0;
-								if ($tax)
-									$taxrate = $tax->taxrate_rate;
-								$ledgerAmount = LedgerAmount::createFromNet($net,$taxrate);
-							}
-							else
-								$ledgerAmount = LedgerAmount::createFromNet($net,0.0);
+							//if ($account->account_sale_tax_class)
+							//{
+							//    $tax_class_account = $DB->getTaxClass($account->account_sale_tax_class);
+							//    $tax = $DB->getTaxRateForClassAndDate($tax_class_account->idtaxclass,new DateTime());
+							//    $taxrate = 0.0;
+							//    if ($tax)
+							//        $taxrate = $tax->taxrate_rate;
+							//    $ledgerAmount = LedgerAmount::createFromNet($net,$taxrate);
+							//}
+							//else
+							//    $ledgerAmount = LedgerAmount::createFromNet($net,0.0);
 
 							$xtn = $DB->saleAccount($date,$description,$accountid,$invoice->idinvoice,$ledgerAmount,0,0,false);
 							$undo->add(new UndoAction("delete","journal","journal_xtn",$xtn) );
@@ -299,9 +348,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
 						if ( $DB->EndTransaction() )
 						{
+							$DB->createAudit("transaction", "Account sale: Transaction # {$xtn}", $user->iduser);
 							$v = "i={$invoice->idinvoice}";
-							$s = Secure::sec_encryptParam($v,base64_encode($session->session_key));
-							$DB->updateUndoList($user->iduser, $undolist->toJSON());
+                            $s = InputParam::encryptFromString($v, $session->session_key);
+                            $DB->updateUndoList($user->iduser, $undolist->toJSON());
 							header("Location: Invoice.php?v={$s}");
 							exit();
 						}
@@ -363,13 +413,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 										?>
 		
 		class Line {
-			constructor(seq,desc,qty,unitdesc,unit,total,prodid) {
+			constructor(seq,desc,qty,unitdesc,unit,net,tax,gross,prodid) {
 				this.seq = seq;
 				this.desc = desc;
 				this.qty = qty;
 				this.unitdesc = unitdesc;
 				this.unit = unit;
-				this.total = total;
+				this.net = net;
+				this.tax = tax;
+				this.gross = gross;
 				this.prodid = prodid;
 			}
 		}
@@ -432,7 +484,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 					this.createInput("unitdesc[]",l.unitdesc,form);
 					this.createInput("unit[]",l.unit,form);
 					this.createInput("prodid[]",l.prodid,form);
-					this.createInput("total[]",l.total,form);
+					this.createInput("net[]", l.net, form);
+					this.createInput("tax[]", l.tax, form);
+					this.createInput("gross[]", l.gross, form);
 				}
 					
 				form.submit();
@@ -460,26 +514,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		}
 
 		function displayLines() {
-			let sum = 0;
+			let sum_gross = 0;
+			let sum_net = 0;
+			let sum_tax = 0;
 			let tbl = st.ge("saleslist");
 			st.removeAllChildren(tbl);
 			for (let l of items.lines) {
 				let newqty = (l.qty == 0) ? "" : l.qty;
-				st.trow(tbl, l.desc, newqty, "$" + l.unit, "$" + l.total,"<button onclick='deleteLine("+ l.seq +")'>DEL</button>");
-				sum += parseFloat(l.total);
-			}
-			let tax = 0;
-			let tot = sum;
-			if (g_useSalesTax.length > 0) {
-				tax = sum * g_salesTaxRate;
-				tot = sum + tax;
+				let vlinenet = (l.net / 100).toFixed(2);
+				st.trow(tbl, l.desc, newqty, "$" + l.unit, "$" + vlinenet,"<button onclick='deleteLine("+ l.seq +")'>DEL</button>");
+				sum_gross += l.gross;
+				sum_net += l.net;
+				sum_tax += l.tax
 			}
 			st.trow(tbl, "", "", "", "")
 			if (g_useSalesTax.length > 0) {
-				st.trow(tbl, "", "", g_useSalesTax, "$" + tax.toFixed(2))
+				let vtax = (sum_tax / 100).toFixed(2);
+				st.trow(tbl, "", "", g_useSalesTax, "$" + vtax)
 				st.trow(tbl, "", "", "", "")
 			}
-			st.trow(tbl,"","","TOTAL","$" + tot.toFixed(2))
+			let vgross = (sum_gross / 100).toFixed(2);
+			st.trow(tbl, "", "", "TOTAL", "$" + vgross);
 		}
 
 		function addLine() {
@@ -508,16 +563,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 			//Remove $ signs and commas
 			let strtot = String(st.ge("totalcost").value);
 			let tot = st.parseCurrency(strtot);
-			if (inctax.checked) {
-				tot = parseFloat(tot / (1 + g_salesTaxRate)).toFixed(2);
+
+			//Now we need to woprk back
+			let gross = 0;
+			let net = 0;
+			let tax = 0;
+			if (inctax) {
+				gross = tot;
+				net = parseFloat((gross / (1 + g_salesTaxRate)).toFixed(2));
+
+				gross = parseInt(Math.round(gross * 100));
+				net = parseInt(Math.round(net * 100));
+				tax = gross - net;
 			}
+			else {
+				gross = tot;
+				net = gross;
+				gross = parseInt(Math.round(gross * 100));
+				net = parseInt(Math.round(net * 100));
+			}
+
 
 			let l = new Line(m,
 				st.ge("product").value,
 				qty,
 				st.ge("unitdesc").value,
 				unitcost,
-				tot,
+				net,
+				tax,
+				gross,
 				product_id
 			);
 
@@ -571,7 +645,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 			if (st.def(g_formdata.lines)) {
 				for (fl of g_formdata.lines) {
 					let m = items.maxseq() + 1;
-					let l = new Line(m, fl.desc, fl.qty, fl.unitdesc, fl.unit, fl.total, fl.prodid);
+					let l = new Line(m, fl.desc, fl.qty, fl.unitdesc, fl.unit, fl.net,fl.tax,fl.gross, fl.prodid);
 					items.add(l);
 				}
 				clearEntryFields();

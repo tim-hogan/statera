@@ -3,6 +3,7 @@ require dirname(__FILE__) . "/includes/classSecure.php";
 require dirname(__FILE__) . "/includes/classRolling.php";
 require dirname(__FILE__) . "/includes/classstateraDB.php";
 require dirname(__FILE__) . "/includes/classFormList2.php";
+require dirname(__FILE__) . "/includes/classInputParam.php";
 
 function var_error_log( $object=null , $text='')
 {
@@ -22,18 +23,18 @@ if (!isset($_GET['v']))
 	exit();
 }
 
-$s = Secure::sec_decryptParamPart($_GET['v'],base64_encode($session->session_key));
-if (!$s || strlen($s) == 0)
+$inputParams = null;
+$inputParams = InputParam::load($_GET['v'], $session->session_key);
+if (!$inputParams)
 {
 	error_log("ERROR: {$selff} [" .__LINE__. "] Unable to invoice key");
 	header("Location: SecurityError.php");
 	exit();
 }
-parse_str($s,$a);
 
 $invoiceid = 0;
-if (isset($a['i']))
-	$invoiceid = intval($a['i']);
+$invoiceid = $inputParams->i;
+
 $invoice = $DB->getInvoice($invoiceid);
 $invoice_title = sprintf("%06d",$invoice->invoice_number);
 
@@ -126,6 +127,7 @@ function buildCompanyLines($invoice,&$lines)
 		#middle td.desc {width: 75%; padding-right: 2cm;}
 		#middle td.tdm {vertical-align: middle;}
 		.r {text-align: right;}
+		p.ptemrs {font-size: 9pt;}
 		@media print {
 			#container {margin: 0; padding: 0; width: 21cm; height: 29.7cm;}
 			#heading {display: none;}
@@ -154,6 +156,7 @@ function buildCompanyLines($invoice,&$lines)
 		<?php include ("./includes/menu.html");?>
 		<div id="nonprint">
 			<button onclick="window.print()">PRINT</button>
+			<button onclick="location.href = '/';">HOME</button>
 		</div>
 		<div id="page">
 			<div id="printarea">
@@ -234,7 +237,9 @@ function buildCompanyLines($invoice,&$lines)
 						<tr><td>DESCRITION</td><td class="r">QTY</td><td>UNIT</td><td class="r td4">UNIT PRICE</td><td class="r">TOTAL</td></tr>
 						<tr><td class='blank1' colspan='5'></td></tr>
 						<?php
-							$net = 0.0;
+							$sum_net = 0.0;
+							$sum_tax = 0.0;
+							$sum_gross = 0.0;
 							$strnet = "";
 							$strTotal = "";
 							$lines = $DB->everyInvoiceLine($invoice->idinvoice);
@@ -250,32 +255,26 @@ function buildCompanyLines($invoice,&$lines)
 								else
 									$unit = "$". number_format($l["invoice_line_unit_cost"],2);
 
-								if ($l["invoice_line_total_cost"] == 0)
+								if ($l["invoice_line_net_cost"] == 0)
 									$total = "";
 								else
-									$total = "$". number_format($l["invoice_line_total_cost"],2);
+									$total = "$". number_format($l["invoice_line_net_cost"],2);
 
-								$net += $l["invoice_line_total_cost"];
+								$sum_net += $l["invoice_line_net_cost"];
+								$sum_tax += $l["invoice_line_tax_cost"];
+								$sum_gross += $l["invoice_line_gross_cost"];
 								echo "<tr><td class='desc'>{$desc}</td><td class='r'>{$qty}</td><td>{$unitdesc}</td><td class='r td4'>{$unit}</td><td class='r'>{$total}</td></tr>";
 								echo "<tr><td class='blank4' colspan='5'></td></tr>";
-							}
+						}
 
-							$strnet = "$". number_format($net,2);
+							$strnet = "$". number_format($sum_net,2);
 							echo "<tr><td class='blank3' colspan='5'></td></tr>";
 							if ($invoice->invoice_sale_tax_class > 0)
 							{
-								$inv_total = $net;
-								$inv_tax = 0;
+								$strinv_tax = "$" . number_format($sum_tax, 2);
+								$strTotal = "$" . number_format($sum_gross, 2);
 								$taxclass = $DB->getTaxClass($invoice->invoice_sale_tax_class);
 								$strTaxName = strtoupper($taxclass->taxclass_name->toHTML());
-								$taxrate = $DB->getTaxRateForClassAndDate($invoice->invoice_sale_tax_class,$invoice->invoice_date);
-								if ($taxrate)
-								{
-									$inv_tax = round($net * $taxrate->taxrate_rate,2, PHP_ROUND_HALF_DOWN);
-									$strinv_tax = "$". number_format($inv_tax,2);
-									$inv_total = round($net + $inv_tax,2,PHP_ROUND_HALF_DOWN);
-									$strTotal = "$". number_format($inv_total,2);
-								}
 								echo "<tr><td colspan='3'></td><td class='r td4'>NET</td><td class='r td51'>{$strnet}</td></tr>";
 								echo "<tr><td class='blank2' colspan='5'></td></tr>";
 								echo "<tr><td colspan='3'></td><td class='r td4'>{$strTaxName}</td><td class='r'>{$strinv_tax}</td></tr>";
@@ -302,8 +301,9 @@ function buildCompanyLines($invoice,&$lines)
 							echo "<tr><td class='tdtail1' colspan='3'>RECEIPT</td></tr>";
 							echo "<tr><td class='blank1' colspan='3'></td></tr>";
 							echo "<tr><td>INVOICE TOTAL</td><td></td><td class='r'>{$strTotal}</td></tr>";
-							echo "<tr><td>RECEIVED</td><td class='r'>{$strTotal}</td><td></td></tr>";
 							echo "<tr><td class='blank1' colspan='3'></td></tr>";
+							echo "<tr><td>RECEIVED</td><td class='r'>{$strTotal}</td><td></td></tr>";
+							echo "<tr><td class='blank2' colspan='3'></td></tr>";
 							echo "<tr><td>BALANCE</td><td class='r'></td><td class='r td31'>$0.00</td></tr>";
 						}
 						else
@@ -320,6 +320,8 @@ function buildCompanyLines($invoice,&$lines)
 								echo "<tr><td>ACCOUNT NUMBER: {$invoice->invoice_bank_acct_number->toHTML()}</td></tr>";
 							}
 							echo "<tr><td>REFERENCE: {$strInvNum}</td></tr>";
+							echo "<tr><td class='blank3' ></td></tr>";
+							echo "<tr><td class='ptemrs'>PAYMENT TERMS: Payment is due within 7 working days of invoice date.</td></tr>";
 						}
 						?>
 					</table>

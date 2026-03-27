@@ -86,7 +86,7 @@ $chart_expenses_operating = [
 	["Desc" => "Security", "tax" => 1, "m" => 0],
 	["Desc" => "Staff Welfare", "tax" => 1, "m" => 0],
 	["Desc" => "Subscriptions and courses", "tax" => 1, "m" => 0],
-	["Desc" => "Telephone/Intertnet", "tax" => 1, "m" => 0,],
+	["Desc" => "Telephone/Internet", "tax" => 1, "m" => 0,],
 	["Desc" => "Technical & Reserach Material", "tax" => 1, "m" => 0,],
 	["Desc" => "Tools Under($1000)", "tax" => 1, "m" => 0,],
 	["Desc" => "Travel", "tax" => 1, "m" => 0,],

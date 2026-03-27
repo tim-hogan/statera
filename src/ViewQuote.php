@@ -16,23 +16,25 @@ function var_error_log($object = null, $text = '')
 }
 
 require dirname(__FILE__) . "/includes/commonSession.php";
+
 $selff = trim($_SERVER["PHP_SELF"], "/");
 $o_quote = null;
 $quote_id = 0;
+$inputParams = null;
 
 if ($_SERVER["REQUEST_METHOD"] == "GET")
 {
 	if (isset($_GET["v"]))
-    {
-		$s = Secure::sec_decryptParamPart($_GET["v"],base64_encode($session->session_key));
-		if ($s && strlen($s) > 0)
+	{
+		$inputParams = InputParam::load($_GET['v'], $session->session_key);
+		if ($inputParams)
 		{
-			parse_str($s,$a);
-            $quote_id = intval($a["i"]);
-			$o_quote = $DB->o_getQuoteById(intval($a["i"]));
-        }
-    }
+			$quote_id = $inputParams->i;
+			$o_quote = $DB->o_getQuoteById($quote_id);
+		}
+	}
 }
+
 $dtNow = new DateTime();
 $o_taxrate = $DB->getTaxRateForClassAndDate(1, $dtNow);
 
@@ -48,7 +50,7 @@ $o_taxrate = $DB->getTaxRateForClassAndDate(1, $dtNow);
 	<link href="css/menu.css" rel="stylesheet" />
 	<link href="css/footer.css" rel="stylesheet" />
 	<style>
-        #controls {margin-top: 20px; margin-bottom: 20px; text-align: center;}
+		#controls {margin-top: 20px; margin-bottom: 20px; text-align: center;}
 		#newquoteheading {margin-left: 20px;}
 		#newquoteheading h1 {color: #6b6ba7;font-family: Akshar;font-weight: 300;}
 		#printpage {margin: auto;max-width: 800px;}
@@ -59,7 +61,12 @@ $o_taxrate = $DB->getTaxRateForClassAndDate(1, $dtNow);
 		#printarea td.td3 {width: 15%;}
 		#tabelline {width: 100%;}
 		#gap {height: 20px;}
-		td.sz1 {font-size: 14pt; font-weight: bold;}
+		#feet button {background-color: #06c11e; font-size: 14pt;color: white;}
+		#feet a {text-decoration: none;color: white;}
+		#feet a:link {color: white;}
+		#feet a:visited {color: white;}
+		#d_accept {text-align: center;}
+		td.sz1 {font-size: 14pt; font-weight: bold;vertical-align: top;}
 		.r {text-align: right;}
 		.l {text-align: left;}
 		.lcol1 {width: 10%;vertical-align:top;}
@@ -83,10 +90,12 @@ $o_taxrate = $DB->getTaxRateForClassAndDate(1, $dtNow);
 <body>
 	<div id="controls">
 		<button onclick="window.print();">PRINT</button>
+		<button onclick="location.href = '/';">HOME</button>
+		<button onclick="location.href='Quote.php?v=<?php echo $_GET["v"];?>'">EDIT</button>
 	</div>
 	<div id="printpage">
 		<div id="printarea">
-            <?php
+			<?php
 				if ($o_quote)
 				{
 					echo "<table>";
@@ -166,8 +175,10 @@ $o_taxrate = $DB->getTaxRateForClassAndDate(1, $dtNow);
 					$sum = 0;
 					foreach($o_lines as $l)
 					{
+						$v = "";
 						$sum += $l->quote_line_cost;
-						$v = LedgerAmount::format1($l->quote_line_cost);
+						if (! $o_quote->quote_option_no_item_cost)
+							$v = LedgerAmount::format1($l->quote_line_cost);
 						if ($l->quote_line_cost == 0)
 							$v = "";
 						if ($l->quote_line_qty == 0)
@@ -198,19 +209,23 @@ $o_taxrate = $DB->getTaxRateForClassAndDate(1, $dtNow);
 					echo "</table>";
 					echo "</div>";
 
-					echo "<div id='gap'></div>";
+				echo "<div id='gap'></div>";
 
-					echo "<div id='feet'>";
-						echo "<p>To accept this quote please email your acceptance to admin@precisetrees.nz quoting the Quote number <strong>{$strQuote_num}<strong></p>";
+				echo "<div id='feet'>";
+				$v = "q={$o_quote->idquote}&n={$o_quote->quote_number}";
+						$s = InputParam::encryptFromString($v, $devt_environment->getkey("QUOTE_KEY"));
+						//$s = Secure::sec_encryptParam($v,base64_encode($devt_environment->getkey("QUOTE_KEY")));
+						echo "<div id='d_accept'>";
+							echo "<button><a href='https://precisetrees.nz/acceptquote?u={$s}'>ACCEPT QUOTE</a></button>";
+						echo "</div >";
+						echo "<p>or email your acceptance to admin@precisetrees.nz quoting the Quote number <strong>{$strQuote_num}<strong></p>";
 					echo "</div>";
-
-
 				}
 				else
-                {
+				{
 					echo "Quote not available ID = {$quote_id}";
-                }
-            ?>
+				}
+			?>
 		</div>
 	</div>
 </body>

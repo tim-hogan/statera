@@ -64,9 +64,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		header("Location: SecurityError.php");
 		exit();
 	}
-	
-	$dateRange = AccountDate::cadenceRangeMonths($_POST["year"],$_POST["month"],$company->company_sales_tax_cadence,false);
-	$report = $DB->gstReport($dateRange[0],$dateRange[1]);
+	var_error_log($_POST, "POST");
+
+	if (isset($_POST["alt_start_date"]) && strlen($_POST["alt_start_date"]) > 0 && isset($_POST["alt_end_date"]) && strlen($_POST["alt_end_date"]) > 0)
+	{
+		$dateRange[0] = $_POST["alt_start_date"];
+		$dateRange[1] = $_POST["alt_end_date"];
+	}
+	else
+	{
+		$dateRange = AccountDate::cadenceRangeMonths($_POST["year"], $_POST["month"], $company->company_sales_tax_cadence, false);
+	}
+	$report = $DB->gstReport($dateRange[0], $dateRange[1]);
 
 }
 ?>
@@ -82,9 +91,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	<style>
 	#entry {margin: 20px; padding: 20px; border: solid 1px #888; border-radius: 8px;}
 	#entry input[type='submit'] {margin-top: 20px;}
+	#entry a {color: blue; cursor:pointer}
+	#alternatdates {display:none;}
+	#alternatdates input {margin-right: 20px;}
 	#results {margin: 20px; padding: 20px; border: solid 1px #888; border-radius: 8px;}
 	.r {text-align: right;}
 	</style>
+	<script>
+		function showAlt() {
+			document.getElementById("alternatdates").style.display = "block";
+		}
+	</script>
 </head>
 <body>
 	<div id="container">
@@ -126,7 +143,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
 						echo "</tr>";
 						?>
+
 					</table>
+					<p>Click <a onclick="showAlt()">here</a> to enter custom dates</p>
+					<div id="alternatdates">
+						<p>ALTERNATE ENTRY FOR MULTIPLE PERIODS</p>
+						<table>
+							<tr><td>FROM</td><td>TO</td></tr>
+							<tr><td><input type="date" name="alt_start_date" /></td><td><input type="date" name="alt_end_date" /></td></tr>
+						</table>
+					</div>
+
 					<?php echo "<input type='hidden' name='formtoken' value='{$session->csrf_key}'>"; ?>
 					<input type="submit" name="create" value="CREATE REPORT" />
 				</form>    

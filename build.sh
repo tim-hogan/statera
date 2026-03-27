@@ -141,11 +141,12 @@ fi
 
 #webfiles
 emptyandcreate webfiles
+cp ../src/.htaccess			                    ./webfiles
 cp ../src/AccountsPayable.php                   ./webfiles
 cp ../src/AccountsReceivable.php                ./webfiles
+cp ../src/AuditLog.php							./webfiles
 cp ../src/BankAccounts.php                      ./webfiles
 cp ../src/ChangePassword.php                    ./webfiles
-cp ../src/CreateQuote.php	                    ./webfiles
 cp ../src/CreateUser.php	                    ./webfiles
 cp ../src/EndofYear.php                         ./webfiles
 cp ../src/Expenses.php                          ./webfiles
@@ -159,15 +160,21 @@ cp ../src/JournalDump.php                       ./webfiles
 cp ../src/LoanTransaction.php					./webfiles
 cp ../src/Maint.php                             ./webfiles
 cp ../src/MaintSel.php                          ./webfiles
+cp ../src/MonthlyChecklist.php					./webfiles
 cp ../src/NewLoan.php                           ./webfiles
 cp ../src/PayTax.php                            ./webfiles
+cp ../src/PayWage.php                           ./webfiles
+cp ../src/Quote.php								./webfiles
+cp ../src/ReceiveInterest.php					./webfiles
 cp ../src/Sale.php                              ./webfiles
 cp ../src/ShareIssue.php                        ./webfiles
 cp ../src/Signin.php                            ./webfiles
 cp ../src/Signout.php                           ./webfiles
+cp ../src/stateraApi.php                        ./webfiles
 cp ../src/UndoLast.php                          ./webfiles
 cp ../src/ViewAttach.php                        ./webfiles
 cp ../src/ViewExpenses.php                      ./webfiles
+cp ../src/ViewFixedAssets.php                   ./webfiles
 cp ../src/ViewQuote.php							./webfiles
 cp ../src/ViewQuotes.php						./webfiles
 cp ../src/Wizard.php                            ./webfiles
@@ -191,6 +198,7 @@ cp ../../devt/classes/classParseText.php        ./webfiles/includes
 cp ../../devt/classes/classRolling.php			./webfiles/includes
 cp ../../devt/classes/classSQLPlus2.php			./webfiles/includes
 cp ../../devt/classes/classSecure.php			./webfiles/includes
+cp ../../devt/classes/classTextMsg.php			./webfiles/includes
 cp ../../devt/classes/classTime.php			    ./webfiles/includes
 cp ../../devt/classes/classVault.php			./webfiles/includes
 
@@ -207,7 +215,9 @@ cp ../src/css/Signin.css                        ./webfiles/css
 
 #copy js
 emptyandcreate webfiles/js
+cp ../../devt/js/formlist2.js                   ./webfiles/js
 cp ../src/js/st.js                              ./webfiles/js
+cp ../src/js/noEnter.js                         ./webfiles/js
 
 #copy config
 emptyandcreate webfiles/config
@@ -221,7 +231,9 @@ cp ../src/docs/IR265.pdf                        ./webfiles/docs
 emptyandcreate webfiles/images					
 
 emptyandcreate webfiles/images/precisetrees				
-cp ../src/images/precisetrees/Logo1-Transparent.png  ./webfiles/images/precisetrees
+cp ../src/images/precisetrees/Logo1-Transparent.png		./webfiles/images/precisetrees
+cp ../src/images/precisetrees/favicon.ico				./webfiles/images/precisetrees
+cp ../src/images/precisetrees/treefavicon.ico			./webfiles/images/precisetrees
 
 
 tar -zcf ../install/statera.tar.gz .
