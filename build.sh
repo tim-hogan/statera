@@ -97,6 +97,8 @@ if ! $INGNOREGIT ; then
 	echo -e "Getting statera from GitHub"
 	rm -fr .git
 	rm -fr *
+	eval `ssh-agent -s`
+	ssh-add ~/.ssh/github
 	git init
 	git remote add statera git@github.com:tim-hogan/statera.git
 	#git remote add statera https://github.com/tim-hogan/statera.git
