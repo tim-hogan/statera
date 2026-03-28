@@ -98,7 +98,8 @@ if ! $INGNOREGIT ; then
 	rm -fr .git
 	rm -fr *
 	git init
-	git remote add statera https://github.com/tim-hogan/statera.git
+	git remote add statera git@github.com:tim-hogan/statera.git
+	#git remote add statera https://github.com/tim-hogan/statera.git
 	git pull statera $BRANCH
 
 	. version
