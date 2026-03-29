@@ -24,6 +24,9 @@ if (! $company)
 	exit();
 }
 
+$theme = $company->company_style_theme->raw();
+error_log("Home page theme {$theme}");
+
 $salecash = InputParam::encryptFromString("w=cash",$session->session_key);
 $saleaccount = InputParam::encryptFromString("w=account",$session->session_key);
 
@@ -41,15 +44,9 @@ if (!isset($_SESSION["csrf_key"]))
 	<link href="css/base.css" rel="stylesheet" />
 	<link href="css/heading.css" rel="stylesheet" />
 	<link href="css/footer.css" rel="stylesheet" />
-	<style>
-		#main {padding: 20px;margin-bottom: 50px;}
-		div.links {padding: 10px; border: solid 1px #aaa;margin-bottom: 10px;}
-		.linkscontainer {display: flex;}
-		div.links h2 {font-family: Akshar; font-weight: normal;margin-top: 0; color: #666;}
-		div.link {margin-right: 12px;text-align: center; vertical-align: middle;padding: 10px; width: 100px; height: 40px; border: solid 1px #888; border-radius: 5px;color: white;background: linear-gradient(0deg, rgba(165,165,249,1) 0%, rgba(107,107,167,1) 100%);cursor: pointer;}
-		div.link:hover {color: #ffff00;background: linear-gradient(0deg, rgba(107,107,167,1) 0%, rgba(165,165,249,1) 100%);}
-		h1 {color: #6b6ba7;font-family: Akshar; font-weight: 300;}
-	</style>
+    <?php
+    echo "<link href='css/{$theme}/index.css' rel='stylesheet' />";
+    ?>
 	<script>
 		function sel(n) {
 			window.location = n.getAttribute("href");
@@ -110,7 +107,7 @@ if (!isset($_SESSION["csrf_key"]))
 					<div class="linkscontainer">
 						<div class="link" href="ViewExpenses.php" onclick="sel(this)">VIEW EXPENSES</div>
 						<div class="link" href="ViewQuotes.php" onclick="sel(this)">VIEW QUOTES</div>
-                        <div class="link" href="ViewQuoteRequests.php" onclick="sel(this)">VIEW QUOTE REQUESTS</div>
+						<div class="link" href="ViewQuoteRequests.php" onclick="sel(this)">VIEW QUOTE REQUESTS</div>
 						<div class="link" href="PaySlips.php" onclick="sel(this)">VIEW PAY SLIPS</div>
 						<div class="link" href="PayRuns.php" onclick="sel(this)">VIEW PAY RUNS</div>
 						<div class="link" href="ViewFixedAssets.php" onclick="sel(this)">VIEW FIXED ASSETS</div>

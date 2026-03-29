@@ -142,9 +142,10 @@ class company extends TableRow
 					"company_bank_acct_name" =>["type" => "varchar"],
 					"company_bank_acct_number" =>["type" => "varchar"],
 					"company_sales_tax_name" =>["type" => "varchar"],
-					"company_sales_tax_cadence" =>["type" => "int"],
+					"company_sales_tax_cadence" => ["type" => "int"],
 					"company_sales_tax_first_month"=>["type" => "int"],
-					"company_financialyear_start_month"=>["type" => "int"]
+					"company_financialyear_start_month" =>["type" => "int"],
+					"company_style_theme" => ["type" => "varchar"]
 				]
 			);
 	}

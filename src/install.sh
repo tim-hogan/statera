@@ -186,6 +186,11 @@ if $INSTALLFILES ; then
 	mkdir -p $WEBDIR
 	cp -rT ${DIR}/tmpfiles/webfiles/ $WEBDIR
 	
+	echo "Creating theme directory"
+	mkdir -p $WEBDIR/css/$INSTALLNAME
+
+	cp -rT ${DIR}/tmpfiles/webfiles/css/default $WEBDIR/css/$INSTALLNAME
+	
 	mkdir -p $WEBDIR/attachments
    
 	echo "Copy backattachments"

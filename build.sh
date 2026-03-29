@@ -225,6 +225,9 @@ cp ../src/css/list.css                          ./webfiles/css
 cp ../src/css/menu.css                          ./webfiles/css
 cp ../src/css/Signin.css                        ./webfiles/css
 
+emptyandcreate webfiles/css/default
+cp ../src/css/default/index.css                 ./webfiles/css/default
+
 #copy js
 emptyandcreate webfiles/js
 cp ../../devt/js/formlist2.js                   ./webfiles/js
