@@ -39,7 +39,9 @@ if (!isset($_SESSION["csrf_key"]))
 <head>
 	<meta name="viewport" content="width=device-width" />
 	<meta name="viewport" content="initial-scale=1.0" />
-	<title>PRECISE TREES</title>
+    <?php
+    echo "<title>{$company->company_name->toHTML()}</title>";
+    ?>
 	<link rel="icon" type="image/x-icon" href="/images/precisetrees/treefavicon.ico" />
 	<link href="css/base.css" rel="stylesheet" />
 	<link href="css/heading.css" rel="stylesheet" />

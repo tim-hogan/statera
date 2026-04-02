@@ -33,13 +33,16 @@ $quoiteid = 0;
 
 if (isset($_GET["v"]))
 {
-	$s = Secure::sec_decryptParamPart($_GET["v"],base64_encode($session->session_key));
-	if ($s && strlen($s) > 0)
+	//$s = Secure::sec_decryptParamPart($_GET["v"],base64_encode($session->session_key));
+	$inputParams = InputParam::load($_GET["v"],$session->session_key);
+	if ($inputParams)
+	//if ($s && strlen($s) > 0)
 	{
-		parse_str($s,$a);
-		if (isset($a["i"]))
+		$quoiteid = $inputParams->i;
+		//parse_str($s,$a);
+		if ($quoiteid && $quoiteid > 0)
 		{
-			$quoiteid = intval($a["i"]);
+			//$quoiteid = intval($a["i"]);
 
 			$o_quote = $DB->o_getQuoteById($quoiteid);
 			$formfields["date"] = $o_quote->quote_date;

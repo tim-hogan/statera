@@ -1,0 +1,46 @@
+﻿#main {
+    padding: 20px;
+    margin-bottom: 50px;
+}
+
+div.links {
+    padding: 10px;
+    border: solid 1px #aaa;
+    margin-bottom: 10px;
+}
+
+.linkscontainer {
+    display: flex;
+}
+
+div.links h2 {
+    font-family: Akshar;
+    font-weight: normal;
+    margin-top: 0;
+    color: #666;
+}
+
+div.link {
+    margin-right: 12px;
+    text-align: center;
+    vertical-align: middle;
+    padding: 10px;
+    width: 100px;
+    height: 40px;
+    border: solid 1px #888;
+    border-radius: 5px;
+    color: white;
+    background: linear-gradient(0deg, rgba(164,246,174,1) 0%, rgba(10,120,5,1) 100%);
+    cursor: pointer;
+}
+
+    div.link:hover {
+        color: #ffff00;
+        background: linear-gradient(0deg, rgba(10,120,5,1) 0%, rgba(164,246,174,1) 100%);
+    }
+
+h1 {
+    color: #039a1a;
+    font-family: Akshar;
+    font-weight: 300;
+}
