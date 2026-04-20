@@ -39,16 +39,16 @@ if (!isset($_SESSION["csrf_key"]))
 <head>
 	<meta name="viewport" content="width=device-width" />
 	<meta name="viewport" content="initial-scale=1.0" />
-    <?php
-    echo "<title>{$company->company_name->toHTML()}</title>";
-    ?>
+	<?php
+	echo "<title>{$company->company_name->toHTML()}</title>";
+	?>
 	<link rel="icon" type="image/x-icon" href="/images/precisetrees/treefavicon.ico" />
 	<link href="css/base.css" rel="stylesheet" />
 	<link href="css/heading.css" rel="stylesheet" />
 	<link href="css/footer.css" rel="stylesheet" />
-    <?php
-    echo "<link href='css/{$theme}/index.css' rel='stylesheet' />";
-    ?>
+	<?php
+	echo "<link href='css/{$theme}/index.css' rel='stylesheet' />";
+	?>
 	<script>
 		function sel(n) {
 			window.location = n.getAttribute("href");
@@ -136,7 +136,13 @@ if (!isset($_SESSION["csrf_key"]))
 						<div class="link" href="ExpenseSummary.php" onclick="sel(this)">EXPENSE SUMMARY</div>
 						<div class="link" href="CashFlowReport.php" onclick="sel(this)">CASH FLOW</div>
 						<div class="link" href="AuditLog.php" onclick="sel(this)">AUDIT LOG</div>
+					</div>
+				</div>
+				<div class="links">
+					<h2>TOOLS</h2>
+					<div class="linkscontainer">
 						<div class="link" href="Reconciliation.php" onclick="sel(this)">RECONCILIATION TOOL</div>
+						<div class="link" href="QuotesNoAccount.php" onclick="sel(this)">QUOTE ACCOUNT TOOL</div>
 					</div>
 				</div>
 			</div>

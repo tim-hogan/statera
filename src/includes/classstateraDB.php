@@ -1540,8 +1540,7 @@ class stateraDB extends SQLPlus
 				{
 					$gross += $rec["timesheet_direct_gross"];
 					$type = "direct";
-				}
-				else
+				} else
 					$sum += floatval($rec["timesheet_hours"]);
 				if (strlen($first) == 0)
 					$first = $rec["timesheet_date"];
@@ -1587,6 +1586,11 @@ class stateraDB extends SQLPlus
 	//*********************************************************************
 	// journal functions
 	//*********************************************************************
+	public function getJournal($id)
+	{
+		return $this->p_singlequery("select * from journal where idjournal = ?", "i", $id);
+	}
+
 	public function o_getJournal($id)
 	{
 		return $this->o_singlequery("journal", "select * from journal left join chart on chart_code = journal_chart where idjournal = ?", "i", $id);
@@ -1600,6 +1604,22 @@ class stateraDB extends SQLPlus
 	public function allJournal($where="",$order="")
 	{
 		return $this->p_query("select * from journal {$where} {$order}",null,null);
+	}
+
+	public function getAllForSource($idjournal)
+	{
+		$ret = array();
+		$oj1 = $this->o_getJournal($idjournal);
+		if ($oj1)
+		{
+			$r = $this->p_query("select * from journal where journal_source = ? order by idjournal", "i", $oj1->journal_source);
+			if ($r)
+			{
+				while ($o = $r->fetch_object("journal"))
+					$ret[] = $o;
+			}
+		}
+		return $ret;
 	}
 
 	public function firstJournal()
@@ -1758,6 +1778,77 @@ class stateraDB extends SQLPlus
 			return null;
 		}
 		return $xtn;
+	}
+
+	public function updatePair($rec, $coa1, $coa2, $enterTransaction = true,$userid=null)
+	{
+		$rslt = false;
+
+		if ($enterTransaction)
+			$this->BeginTransaction();
+
+		$rec2 = $rec;
+		$rec2["idjournal"] = $rec["journal_link"];
+		$rec2["journal_link"] = $rec["idjournal"];
+
+		$rec2["journal_chart"] = $coa2;
+
+		$rec2["journal_net"] = -($rec["journal_net"]);
+		$rec2["journal_tax"] = -($rec["journal_tax"]);
+		$rec2["journal_gross"] = -($rec["journal_gross"]);
+
+		$this->p_update_from_array("journal", $rec, "where idjournal={$rec["idjournal"]}");
+		$this->p_update_from_array("journal", $rec2, "where idjournal={$rec2["idjournal"]}");
+
+		if ($enterTransaction)
+		{
+			if ($this->EndTransaction())
+				$rslt = true;
+			$rslt = false;
+		}
+		else
+		{
+			$rslt = true;
+		}
+		if ($rslt)
+		{
+			$j = $this->o_getJournal($rec["idjournal"]);
+			$this->createAudit("update", "Journal records updated {$j->journal_date} {$j->journal_description->toHTML()} {$j->journal_gross}", $userid);
+		}
+
+		return $rslt;
+	}
+
+	public function deletePair($id,$userid=null)
+	{
+		$rslt = false;
+		$j = $this->o_getJournal($id);
+		$id2 = $j->journal_link;
+
+		$this->BeginTransaction();
+		$this->p_delete("delete from journal where idjournal = ?", "i", $id);
+		$this->p_delete("delete from journal where idjournal = ?", "i", $id2);
+		$rslt = $this->EndTransaction();
+
+		$this->createAudit("delete", "Journal records deleted {$j->journal_date} {$j->journal_description->toHTML()} {$j->journal_gross}", $userid);
+
+		return $rslt;
+	}
+
+	public function deleteAllJournalForSource($idjournal, $userid = null)
+	{
+		$rslt = false;
+
+		$o_all = $this->getAllForSource($idjournal);
+
+		$this->BeginTransaction();
+		foreach($o_all as $j)
+		{
+			$this->p_delete("delete from journal where idjournal = ?", "i", $j->idjournal);
+		}
+		$rslt = $this->EndTransaction();
+		$this->createAudit("delete", "Journal records deleted {$o_all[0]->journal_date} {$o_all[0]->journal_description->toHTML()} {$o_all[0]->journal_gross}", $userid);
+		return $rslt;
 	}
 
 	public function getJournalPair($id)
@@ -3249,6 +3340,16 @@ class stateraDB extends SQLPlus
 	public function allQuotesDesc()
 	{
 		return $this->p_query("select * from quote where quote_deleted = 0 order by quote_number desc", null, null);
+	}
+
+	public function allQuotesOpenAcceptedNoAccount()
+	{
+		return $this->p_query("select * from quote where quote_deleted = 0 and quote_customer_account is null and (quote_status = 'open' or quote_status = 'accepted') order by quote_number desc", null, null);
+	}
+
+	public function AssignAccountToQuote($idquote, $idaccount)
+	{
+		return $this->p_update("update quote set quote_customer_account = ? where idquote = ?", "ii", $idaccount, $idquote);
 	}
 
 	public function allAcceptedQuotesWithAccountDesc()

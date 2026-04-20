@@ -174,6 +174,8 @@ cp ../src/PaySlips.php							./webfiles
 cp ../src/PayTax.php                            ./webfiles
 cp ../src/PayWage.php                           ./webfiles
 cp ../src/Quote.php								./webfiles
+cp ../src/QuoteAssign.php						./webfiles
+cp ../src/QuotesNoAccount.php					./webfiles
 cp ../src/ReceiveInterest.php					./webfiles
 cp ../src/Reconciliation.php					./webfiles
 cp ../src/Sale.php                              ./webfiles

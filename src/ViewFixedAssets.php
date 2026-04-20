@@ -21,6 +21,8 @@ $year_End_month = (($o_comapny->company_financialyear_start_month - 2) % 12) + 1
 $acct_date = new AccountDate($year_End_month);
 
 $o_assets = $DB->o_everyAsset();
+$sum = array();
+
 if ($o_assets)
 {
 	$firstdate = $o_assets[0]->asset_purhcase_date;
@@ -35,7 +37,7 @@ if ($o_assets)
 <head>
 	<meta name="viewport" content="width=device-width" />
 	<meta name="viewport" content="initial-scale=1.0" />
-	<title>QUOTES</title>
+	<title>FIXED ASSETS</title>
 	<link href="css/base.css" rel="stylesheet" />
 	<link href="css/heading.css" rel="stylesheet" />
 	<link href="css/menu.css" rel="stylesheet" />
@@ -60,7 +62,7 @@ if ($o_assets)
 		<div id="main">
 			<div id="list">
 				<table>
-					<?php
+                    <?php
 					if ($o_assets)
 					{
 						$startyear = intval(($fyfirst[1])->format("Y"));
@@ -68,7 +70,7 @@ if ($o_assets)
 						echo "<table>";
 						echo "<tr><th></th><th></th><th colspan='2'>DEPRECIATION</th></tr>";
 						echo "<tr><th>PURCAHSE DATE</th><th>NAME</th><th>METHOD</th><th>RATE</th><th>PURCHASE PRICE</th><th>AGE (MONTHS)</th>";
-						for ($y = $startyear; $y <= $endyear; $y++)
+						for ($y = $startyear; $y < $endyear; $y++)
 						{
 							echo "<th>{$y}</th>";
 						}
@@ -88,12 +90,13 @@ if ($o_assets)
 							echo "<tr><td class='r'>{$strDate}</td><td>{$asset->asset_name->toHTML()}</td><td>{$strDepMethod}</td><td>{$strRate}</td><td class='r'>{$strOrgValue}</td><td>{$ageMonths}</td>";
 
 							$lastCurrent = 0;
-							for ($y = $startyear; $y <= $endyear; $y++)
+							for ($y = $startyear; $y < $endyear; $y++)
 							{
 								$current_value = $DB->assetCurrentValue($asset->idasset, $acct_date->finacialYear("{$y}-01-01") [1] );
 								$strV = LedgerAmount::format1($current_value);
 								echo "<td class='r'>{$strV}</td>";
 								$lastCurrent = $current_value;
+                                $sum[$y] += $current_value;
 							}
 							$tot2 += $lastCurrent;
 							echo "</tr>";
@@ -102,13 +105,19 @@ if ($o_assets)
 						$strTot2 = LedgerAmount::format1($tot2);
 
 						echo "<tr><td class='gap'></td></tr>";
-						echo "<tr><td class='b'>TOTAL</td><td></td><td></td><td></td><td class='r b'>{$strTot1}</td><td></td><td class='r b'>{$strTot2}</td></tr>";
+						echo "<tr><td class='b'>TOTAL</td><td></td><td></td><td></td><td class='r b'>{$strTot1}</td><td></td>";
+                        for ($y = $startyear; $y < $endyear; $y++)
+                        {
+							$strTot2 = LedgerAmount::format1($sum[$y]);
+                            echo "<td class='r b'>{$strTot2}</td>";
+                        }
+					    echo "</tr>";
 
 						echo "</table>";
 
 					} else
 						echo "<p>NO ASSETS</p>";
-					?>
+                    ?>
 				</table>
 			</div>
 		</div>

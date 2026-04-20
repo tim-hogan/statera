@@ -23,18 +23,17 @@ if (!isset($_GET['v'])) {
 	exit();
 }
 
-$s = Secure::sec_decryptParamPart($_GET['v'], base64_encode($session->session_key));
-if (!$s || strlen($s) == 0)
-{
-	error_log("ERROR: {$selff} [" . __LINE__ . "] Unable to decode key");
+$inputParams = null;
+$inputParams = InputParam::load($_GET['v'], $session->session_key);
+if (!$inputParams) {
+	error_log("ERROR: {$selff} [" . __LINE__ . "] Unable to view expense key");
 	header("Location: SecurityError.php");
 	exit();
 }
 
-parse_str($s, $a);
-
+$journal_id = $inputParams->i;
 $items = array();
-$journal_id = $a["i"];
+
 $o_journal = $DB->o_getJournal($journal_id);
 if ($o_journal->journal_attachment_group)
 {
@@ -54,8 +53,8 @@ if ($o_journal->journal_attachment_group)
 	<link href="css/menu.css" rel="stylesheet" />
 	<link href="css/footer.css" rel="stylesheet" />
 	<style>
-        #main {margin: 20px;}
-        #list {padding: 20px;border: solid 1px #888;border-radius: 8px;}
+		#main {margin: 20px;}
+		#list {padding: 20px;border: solid 1px #888;border-radius: 8px;}
 		#heading1 h1 {color: #6b6ba7;font-family: Akshar;font-weight: 300;}
 	</style>
 </head>
@@ -64,17 +63,17 @@ if ($o_journal->journal_attachment_group)
 		<?php include ("./includes/heading.html");?>
 		<?php include ("./includes/menu.html");?>
 		<div id="main">
-            <div id="heading1">
-                <h1>ATATCHEMNTS TO EXPENSE</h1>
-            </div>
+			<div id="heading1">
+				<h1>ATATCHEMNTS TO EXPENSE</h1>
+			</div>
 			<div id="list">
 				<table>
-                    <?php
+					<?php
 					foreach($items as $a)
 					{
 						echo "<tr><td><a href='attachments/{$a->attachment_filename->raw()}'>{$a->attachment_original_name->toHTML()}</a></td></tr>";
 					}
-                    ?>
+					?>
 				</table>
 			</div>
 		</div>

@@ -545,6 +545,7 @@ $cash_bank_account = 0.0;
 									echo "<tr><td></td><td class='r'>{$date}</td><td>Depreciation</td><td class='r'>{$strXtn}</td><td class='r'>{$strBal}</td></tr>";
 								}
 							}
+							echo "<tr><td colspan='5' class='blank1'></tr>";
 						}
 						?>
 					</table>
@@ -588,19 +589,34 @@ $cash_bank_account = 0.0;
 						echo "<tr><td colspan='4' class='td1'>LIQUIDITY</td></tr>";
 						echo "<tr><td></td><td></td><td class='r'>CURRENT</td><td class='r'>TARGET</td></tr>";
 
-						$bl = number_format($total_current_assets / $total_current_liabilities, 1);
-						if ($total_current_assets / $total_current_liabilities < 1.5)
-							$class = 'r red';
-						 else
-							$class = 'r';
-						echo "<tr><td>LIQUIDITY RATIO CURRENT</td><td></td><td class='{$class}'>{$bl}</td><td class='r'>2.0</td></tr>";
+						if ($total_current_liabilities < 0)
+						{
+							echo "<tr><td>LIQUIDITY RATIO CURRENT</td><td></td><td class='r'>N/A</td><td class='r'>2.0</td></tr>";
+						}
+						else
+						{
+							$bl = number_format($total_current_assets / $total_current_liabilities, 1);
+							if ($total_current_assets / $total_current_liabilities < 1.5)
+								$class = 'r red';
+							else
+								$class = 'r';
+							echo "<tr><td>LIQUIDITY RATIO CURRENT</td><td></td><td class='{$class}'>{$bl}</td><td class='r'>2.0</td></tr>";
+						}
 
-						$bl = number_format($cash_bank_account / $total_current_liabilities, 1);
-						if ($cash_bank_account / $total_current_liabilities < 1.5)
-							$class = 'r red';
-						 else
-							$class = 'r';
-						echo "<tr><td>LIQUIDITY RATIO CASH</td><td></td><td class='{$class}'>{$bl}</td><td class='r'>2.0</td></tr>";
+
+						if ($total_current_liabilities < 0)
+						{
+							echo "<tr><td>LIQUIDITY RATIO CASH</td><td></td><td class='r'>N/A</td><td class='r'>2.0</td></tr>";
+						}
+						else
+						{
+							$bl = number_format($cash_bank_account / $total_current_liabilities, 1);
+							if ($cash_bank_account / $total_current_liabilities < 1.5)
+								$class = 'r red';
+							else
+								$class = 'r';
+							echo "<tr><td>LIQUIDITY RATIO CASH</td><td></td><td class='{$class}'>{$bl}</td><td class='r'>2.0</td></tr>";
+						}
 
 
 						$bl = number_format(($total_non_current_liabilities / $sumassets) * 100.0,1) . "%";

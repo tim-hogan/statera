@@ -65,7 +65,10 @@ require dirname(__FILE__) . "/includes/commonSession.php";
 						$strchart = "{$j->chart_code} " . $j->chart_description_dr->toHTML();
 						$desc = $j->journal_description->toHTML();
 
-						$s = Secure::sec_encryptParam("i={$j->idjournal}", base64_encode($session->session_key));
+						//$s = Secure::sec_encryptParam("i={$j->idjournal}", base64_encode($session->session_key));
+						
+						$v = "i={$j->idjournal}";
+						$s = InputParam::encryptFromString($v, $session->session_key);
 
 						echo "<tr><td>{$strDate}</td><td>{$strchart}</td><td><a href='Expenses.php?v={$s}'>{$desc}</a></td>";
 						echo "<td>";

@@ -408,7 +408,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		echo "var g_useSalesTax='{$salestaxname}';\n";
 		echo "var g_salesTaxName='{$salestaxname}';\n";
 		echo "var g_salesTaxRate={$salestaxrate};\n";
-		$json_formfields = json_encode($formfields);
+		$json_formfields = addslashes(json_encode($formfields));
 		echo "var g_formdata=JSON.parse('{$json_formfields}');";
 										?>
 		

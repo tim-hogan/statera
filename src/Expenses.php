@@ -38,22 +38,23 @@ $taxclass = $DB->getTaxClassByName($company->company_sales_tax_name->raw());
 $mode = "create";
 
 $errmsg = "";
-
+$o_journal = null;
 $formfields=array();
 
 if ($_SERVER["REQUEST_METHOD"] == "GET")
 {
 	if (isset($_GET['v'])) 
 	{
-		$s = Secure::sec_decryptParamPart($_GET['v'], base64_encode($session->session_key));
-		if (!$s || strlen($s) == 0) 
+		$inputParams = null;
+		$inputParams = InputParam::load($_GET['v'], $session->session_key);
+		if (!$inputParams) 
 		{
-			error_log("ERROR: {$selff} [" . __LINE__ . "] Unable to decode key");
+			error_log("ERROR: {$selff} [" . __LINE__ . "] Unable to view expense key");
 			header("Location: SecurityError.php");
 			exit();
 		}
-		parse_str($s, $a);
-		$journal_id = $a["i"];
+
+		$journal_id = $inputParams->i;
 		$o_journal = $DB->o_getJournal($journal_id);
 
 		$formfields["date"] = $o_journal->journal_date;
@@ -94,6 +95,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	var_error_log($_POST, "post");
 	var_error_log($_FILES, "files");
 
+	if (isset($_POST["delete"])) 
+	{
+		if (isset($_POST["journal_src"])) 
+		{
+			$key = InputParam::load($_POST["journal_src"], $session->session_key);
+			$j_pair = $DB->getJournalPair(intval($key->j));
+
+			if ($j_pair)
+			{
+				header("Location: ConfirmDelete.php?v={$_POST["journal_src"]}");
+				exit();
+			}
+			else
+			{
+				header("Location: SecurityError.php");
+				exit();
+			}
+		}
+	}
+
+
 	foreach($_POST as $key => $v)
 		$formfields[$key] = $v;  
 	
@@ -122,11 +144,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 	$assetid = null;
 	$file_count = 0;
 
-	if ($taxapplies)
-		error_log("Tax applies");
-	if ($inctax)
-		error_log("Includes tax");
-	
 	if ($date == null )
 		$errmsg = "Invalid date specified";
 	if ($chart == 0)
@@ -219,13 +236,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		else
 			$undo = new Undo("Expense to be paid");
 
+		$j_pair = null;
+
+		//If we are in change mode then we need to get the journla pair.
+		if (isset($_POST["change"])) 
+		{
+			if (isset($_POST["journal_src"])) 
+			{
+				$key = InputParam::load($_POST["journal_src"], $session->session_key);
+				$j_pair = $DB->getJournalPair(intval($key->j));
+			}
+		}
+		
+		
+		
 		$DB->BeginTransaction();
 
 		//Create attachments
 		$attach_group_id = null;
 		if ($file_count > 0)
 		{
-			$o_attachGroup = $DB->createAttachmentGroup("expense","");
+			$o_attachGroup = null;
+			if (isset($_POST["change"])) 
+			{
+				
+				//Check to see if we already have an attachment group.
+				if ($j_pair && $j_pair[0]->journal_attachment_group != null)
+				{
+					$o_attachGroup = $DB->o_getAttachmentGroup($j_pair[0]->journal_attachment_group);
+				}
+			}
+			if (!$o_attachGroup)
+			{
+				$o_attachGroup = $DB->createAttachmentGroup("expense","");
+			}
 			$attach_group_id = $o_attachGroup->idattachment_group;
 			for ($idx = 0; $idx < $file_count;$idx++)
 			{
@@ -234,7 +278,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		}
 		
 		
-		if ($fixed_asset)
+		if ($fixed_asset && ! isset($_POST["change"]))
 		{
 			$assetid = $DB->createAsset($desc,$date,$depreciation_type,$depreciation_rate);
 		}
@@ -242,7 +286,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		
 		if (isset($_POST["change"]) )
 		{
-			$errmsg = "EDIT OF AN EXISTING EXPENSE NOT IMPLEMENTED YET";    
+			if (isset($_POST["journal_src"])) 
+			{
+
+				$coa1 = $j_pair[0]->journal_chart;
+				$coa2 = $j_pair[1]->journal_chart;
+				
+				$coa1 = $chartrec->chart_code;
+
+				$rec = $DB->getJournal(intval($key->j));
+				$rec["journal_date"] = $date;
+				$rec["journal_description"] = $desc;
+				$rec["journal_chart"] = $coa1;
+
+				$rec['journal_net'] = $ledger->net;
+				$rec['journal_tax'] = $ledger->tax;
+				$rec['journal_gross'] = $ledger->gross;
+
+				$rec['journal_vendor_name'] = $vendname;
+				$rec['journal_vendor_tax_number'] = $vendtax;
+
+				$DB->updatePair($rec, $coa1, $coa2, false,$user->iduser);
+
+				$DB->EndTransaction();
+
+				header("Location: ViewExpenses.php");
+				exit();
+			}
 		}
 		else
 		{
@@ -313,14 +383,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 		button.b2 {color: green;}
 	</style>
 	<script>
+		var g_mode = '<?php echo $mode;?>';
 		function catChange(n) {
 			let l = n.getElementsByTagName("option");
 			for (let e of l) {
 				if (e.value == n.value) {
-					if (e.getAttribute("_taxclass").length > 0)
-						document.getElementById("taxapplies").checked = true;
-					else
-						document.getElementById("taxapplies").checked = false;
+					if (g_mode != "change") {
+						if (e.getAttribute("_taxclass").length > 0)
+							document.getElementById("taxapplies").checked = true;
+						else
+							document.getElementById("taxapplies").checked = false;
+					}
 					if (e.getAttribute("_type") == "asset") {
 						console.log("An asset has been selected");
 						document.getElementById("additional_asset").style.display = "block";
@@ -491,7 +564,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 
 					<?php echo "<input type='hidden' name='formtoken' value='{$session->csrf_key}'>"; ?>
 					<div id="submit">
-					<p>Once completed choose from:</p>
+					<?php
+					if ($mode == "create")
+					{
+						echo "<p>Once completed choose from:</p>";
+					}
+					?>
 						<div id="buttons">
 							<?php
 							if ($mode == "create") 
@@ -503,7 +581,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
 							<?php
 							if ($mode == "change") 
 							{
+								$s1 = InputParam::encryptFromString("j={$o_journal->idjournal}", $session->session_key);
+								echo "<input type='hidden' name='journal_src' value='{$s1}'>";
 								echo "<button class='b2' type='submit' name='change' title='Change this expense'>CHANGE</button>";
+								echo "<button class='b2' type='submit' name='delete' title='Delete this expense'>DELETE</button>";
 							}
 							?>
 						</div>
